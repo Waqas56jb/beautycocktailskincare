@@ -32,6 +32,12 @@ export const config = {
     secretKey: required('SUPABASE_SECRET_KEY'),
   },
 
+  chat: {
+    // Short-term memory: how many recent messages are fed back to the model each
+    // turn (the "last N prompts" the bot remembers in-conversation).
+    historyLimit: Number(process.env.CHAT_HISTORY_LIMIT) || 20,
+  },
+
   ghl: {
     apiKey: process.env.GHL_API_KEY || '',
     locationId: process.env.GHL_LOCATION_ID || '',

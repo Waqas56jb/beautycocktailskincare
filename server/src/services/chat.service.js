@@ -40,7 +40,7 @@ async function prepareTurn({ conversationId, text, visitor = {}, channel = 'webs
   await addMessage(conversation.id, 'user', message)
 
   const [history, knowledge] = await Promise.all([
-    getRecentMessages(conversation.id, 20),
+    getRecentMessages(conversation.id, config.chat.historyLimit), // last N-message memory
     searchKnowledge(message),
   ])
 
