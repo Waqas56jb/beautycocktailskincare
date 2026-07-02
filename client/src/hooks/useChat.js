@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react'
-import { sendMessage } from '../lib/api'
+import { useCallback, useRef, useState } from 'react'
+import { streamMessage } from '../lib/api'
 import { brand } from '../lib/brand'
 
 const WELCOME = {
@@ -8,13 +8,14 @@ const WELCOME = {
   text: brand.chatGreeting,
 }
 
-// Minimal conversation state for the widget. The server owns the real
-// conversation memory; we just track what to render and the conversationId.
+// Conversation state for the widget. The bot reply streams in token-by-token,
+// so we append deltas to a placeholder bot message as they arrive.
 export function useChat() {
   const [messages, setMessages] = useState([WELCOME])
   const [conversationId, setConversationId] = useState(null)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState(null)
+  const botIdRef = useRef(0)
 
   const send = useCallback(
     async (text) => {
@@ -23,21 +24,38 @@ export function useChat() {
 
       setError(null)
       setSending(true)
+
+      const botId = `b-${++botIdRef.current}`
       setMessages((prev) => [
         ...prev,
         { id: `u-${prev.length}`, role: 'user', text: trimmed },
+        { id: botId, role: 'bot', text: '' }, // placeholder that fills as it streams
       ])
 
+      const appendToBot = (delta) =>
+        setMessages((prev) => prev.map((m) => (m.id === botId ? { ...m, text: m.text + delta } : m)))
+
       try {
-        const res = await sendMessage({ conversationId, text: trimmed })
-        if (res.conversationId) setConversationId(res.conversationId)
-        setMessages((prev) => [
-          ...prev,
-          { id: `b-${prev.length}`, role: 'bot', text: res.reply },
-        ])
+        await streamMessage(
+          { conversationId, text: trimmed },
+          {
+            onDelta: appendToBot,
+            onMeta: (evt) => {
+              if (evt.conversationId) setConversationId(evt.conversationId)
+              if (evt.error) setError('Something went wrong. Please try again.')
+            },
+          },
+        )
       } catch (err) {
-        setError('Something went wrong. Please try again.')
         console.error(err)
+        setError('Something went wrong. Please try again.')
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === botId && !m.text
+              ? { ...m, text: 'Sorry, something went wrong. Please try again. 💛' }
+              : m,
+          ),
+        )
       } finally {
         setSending(false)
       }
