@@ -43,6 +43,12 @@ if (userId) {
     .upsert({ id: userId, email, full_name: fullName, role: 'admin' }, { onConflict: 'id' })
   if (pErr) console.warn('⚠️  staff_profiles upsert warning:', pErr.message)
   else console.log('✅ staff_profiles row set (role: admin)')
+
+  const { error: cErr } = await supabase
+    .from('staff_credentials')
+    .upsert({ id: userId, password }, { onConflict: 'id' })
+  if (cErr) console.warn('⚠️  staff_credentials upsert warning:', cErr.message)
+  else console.log('✅ staff_credentials stored')
 }
 
 console.log('\nLogin at the admin panel with:')

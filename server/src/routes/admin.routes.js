@@ -1,6 +1,5 @@
 import { Router } from 'express'
 import { requireAuth } from '../middleware/auth.js'
-import { supabase } from '../lib/supabase.js'
 import { listContacts, updateContact } from '../services/contacts.service.js'
 import { listConversations, getRecentMessages } from '../services/conversations.service.js'
 import { addKnowledge } from '../services/knowledge.service.js'
@@ -50,31 +49,6 @@ router.post('/knowledge', async (req, res, next) => {
     const { source, title, content, metadata } = req.body || {}
     if (!content) return res.status(400).json({ error: 'content is required' })
     res.json({ knowledge: await addKnowledge({ source, title, content, metadata }) })
-  } catch (err) {
-    next(err)
-  }
-})
-
-// --- Dashboard stats -------------------------------------------------------
-router.get('/dashboard/stats', async (req, res, next) => {
-  try {
-    const count = async (table, build) => {
-      let q = supabase.from(table).select('*', { count: 'exact', head: true })
-      if (build) q = build(q)
-      const { count: c, error } = await q
-      if (error) throw error
-      return c || 0
-    }
-
-    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-    const [newLeads, openConversations, booked, depositPaid] = await Promise.all([
-      count('contacts', (q) => q.gte('created_at', weekAgo)),
-      count('conversations', (q) => q.eq('status', 'open')),
-      count('contacts', (q) => q.not('booked_date', 'is', null)),
-      count('contacts', (q) => q.eq('deposit_paid', true)),
-    ])
-
-    res.json({ newLeads, openConversations, booked, depositPaid })
   } catch (err) {
     next(err)
   }

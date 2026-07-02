@@ -194,6 +194,18 @@ create table if not exists staff_profiles (
 );
 
 -- ============================================================================
+-- staff_credentials  (admin-panel convenience: lets an admin view/reset the
+-- password they set for a staff account. Stored plaintext BY REQUEST — service
+-- key only, RLS denies all. For higher security, disable password viewing and
+-- rely on Supabase's hashed auth + password resets instead.)
+-- ============================================================================
+create table if not exists staff_credentials (
+  id          uuid primary key references auth.users(id) on delete cascade,
+  password    text,
+  updated_at  timestamptz not null default now()
+);
+
+-- ============================================================================
 -- Row Level Security
 -- All app data is accessed through the backend using the SECRET (service) key,
 -- which bypasses RLS. We enable RLS with NO permissive policies so the
@@ -204,8 +216,9 @@ alter table contacts        enable row level security;
 alter table conversations   enable row level security;
 alter table messages        enable row level security;
 alter table knowledge_base  enable row level security;
-alter table follow_ups      enable row level security;
-alter table staff_profiles  enable row level security;
+alter table follow_ups        enable row level security;
+alter table staff_profiles    enable row level security;
+alter table staff_credentials enable row level security;
 
 drop policy if exists "staff read own profile" on staff_profiles;
 create policy "staff read own profile" on staff_profiles
