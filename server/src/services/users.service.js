@@ -55,7 +55,14 @@ export async function updateStaffProfile(id, { full_name, role }) {
   if (role !== undefined) patch.role = role
   if (Object.keys(patch).length === 0) return { id }
 
-  if (patch.role) await supabase.auth.admin.updateUserById(id, { user_metadata: { role: patch.role } })
+  // Keep the JWT's user_metadata.role in sync (the frontend reads it), merging
+  // so we don't drop other metadata like full_name.
+  if (patch.role) {
+    const { data: cur } = await supabase.auth.admin.getUserById(id)
+    const meta = { ...(cur?.user?.user_metadata || {}), role: patch.role }
+    if (patch.full_name !== undefined) meta.full_name = patch.full_name
+    await supabase.auth.admin.updateUserById(id, { user_metadata: meta })
+  }
   const { error } = await supabase.from('staff_profiles').update(patch).eq('id', id)
   if (error) throw error
   return { id, ...patch }

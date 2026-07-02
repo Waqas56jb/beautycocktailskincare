@@ -130,7 +130,7 @@ export default function Users() {
 }
 
 function CreateUserModal({ onClose, onDone }) {
-  const [form, setForm] = useState({ full_name: '', email: '', password: '', role: 'admin' })
+  const [form, setForm] = useState({ full_name: '', email: '', password: '', role: 'staff' })
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState(null)
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
@@ -160,6 +160,16 @@ function CreateUserModal({ onClose, onDone }) {
         </Field>
         <Field label="Password" hint="Share this with the new user; they can change it later.">
           <Input required minLength={6} value={form.password} onChange={set('password')} placeholder="••••••••" />
+        </Field>
+        <Field label="Role" hint="Staff can use the panel but can't manage users or view credentials. Admins can.">
+          <select
+            value={form.role}
+            onChange={set('role')}
+            className="w-full rounded-xl border border-black/10 bg-white px-3.5 py-2.5 text-sm text-[#1c1a12] outline-none focus:border-[#6f6433]"
+          >
+            <option value="staff">Staff (limited)</option>
+            <option value="admin">Admin (full access)</option>
+          </select>
         </Field>
         {err && <p className="text-sm text-[#c0392b]">{err}</p>}
         <div className="flex justify-end gap-2 pt-1">
