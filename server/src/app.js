@@ -22,7 +22,10 @@ app.use(
 )
 app.use(express.json({ limit: '1mb' }))
 
-// Health check
+// Friendly root + health check
+app.get('/', (req, res) =>
+  res.json({ service: 'Beauty Cocktail Skincare — Martini API', status: 'ok' }),
+)
 app.get('/health', (req, res) => res.json({ ok: true, env: config.nodeEnv }))
 
 // API
