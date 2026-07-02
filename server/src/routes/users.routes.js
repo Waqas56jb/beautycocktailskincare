@@ -31,6 +31,25 @@ router.post('/', async (req, res, next) => {
   }
 })
 
+// --- Current admin's own account (MUST come before the /:id routes so "me"
+//     isn't captured as an :id param) ---
+router.patch('/me/email', async (req, res, next) => {
+  try {
+    res.json({ user: await updateOwnEmail(req.user.id, req.body?.email) })
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.patch('/me/password', async (req, res, next) => {
+  try {
+    await updateOwnPassword(req.user.id, req.body?.password)
+    res.json({ ok: true })
+  } catch (err) {
+    next(err)
+  }
+})
+
 router.patch('/:id', async (req, res, next) => {
   try {
     const { full_name, role } = req.body || {}
@@ -55,24 +74,6 @@ router.delete('/:id', async (req, res, next) => {
     if (req.params.id === req.user.id)
       return res.status(400).json({ error: "You can't delete your own account while logged in." })
     await deleteStaff(req.params.id)
-    res.json({ ok: true })
-  } catch (err) {
-    next(err)
-  }
-})
-
-// --- Current admin's own account (uses the authenticated user's id) ---
-router.patch('/me/email', async (req, res, next) => {
-  try {
-    res.json({ user: await updateOwnEmail(req.user.id, req.body?.email) })
-  } catch (err) {
-    next(err)
-  }
-})
-
-router.patch('/me/password', async (req, res, next) => {
-  try {
-    await updateOwnPassword(req.user.id, req.body?.password)
     res.json({ ok: true })
   } catch (err) {
     next(err)
