@@ -4,8 +4,11 @@
 function required(name) {
   const value = process.env[name]
   if (!value) {
-    console.error(`❌ Missing required env var: ${name}`)
-    process.exit(1)
+    // Throw (don't process.exit) so this surfaces as a normal error on Vercel
+    // serverless instead of hard-killing the runtime.
+    throw new Error(
+      `Missing required env var: ${name}. Set it in .env locally or in Vercel → Project → Settings → Environment Variables.`,
+    )
   }
   return value
 }

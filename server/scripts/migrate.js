@@ -1,5 +1,6 @@
 // One-off migration runner: executes schema.sql against Supabase Postgres.
-// Usage: node --env-file=.env scripts/migrate.js
+// Usage: npm run migrate
+import 'dotenv/config'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
