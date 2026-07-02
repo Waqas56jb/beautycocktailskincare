@@ -55,11 +55,36 @@ function formatKnowledge(chunks) {
   return `RETRIEVED_KNOWLEDGE (authoritative — prefer this for facts):\n${body}`
 }
 
+// Current date/time in the studio's local timezone (Surrey, BC = Pacific).
+// The model has NO inherent sense of "today" — without this it invents a year.
+function currentDateTime() {
+  const d = new Date()
+  const long = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Vancouver',
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZoneName: 'short',
+  }).format(d)
+  const iso = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Vancouver',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(d)
+  return `${long}  (ISO: ${iso})`
+}
+
 // Assemble the full system prompt for one turn.
 export function buildSystemPrompt({ contact, knowledge, channel }) {
   return [
     BASE_PROMPT,
     '\n\n=== RUNTIME CONTEXT ===',
+    `CURRENT DATE & TIME — studio local (America/Vancouver): ${currentDateTime()}`,
+    'Treat the above as "today" for ALL scheduling. Never guess the year or invent a week range — compute "this week"/"next week" from it. Booking dates are naturally in the future; never tell a client a future date is invalid unless it is in the PAST relative to today.',
     `CHANNEL: ${channel || 'website'}`,
     formatKnownContact(contact),
     formatKnowledge(knowledge),
