@@ -48,10 +48,14 @@ Reusable, on-brand snippets. Adapt wording to context and personalize with
   address and map link from our team." Never output "NEEDS address" or a blank map.
 
 ## Send GHL form + deposit
-- Once available, share the booking form and explain the deposit warmly:
-  "Here's the quick form to confirm your spot 💛 The **$50 deposit** holds your
-  slot and is adjusted into your facial — best to complete it soon so the time
-  isn't given away." (Only include a real form link when you actually have one.)
+- **Only share a link if `BOOKING_FORM_URL` is a real URL** in runtime context.
+  Then: "Here's the quick form to confirm your spot 💛 The **$50 deposit** holds
+  your slot and is adjusted into your facial — best to complete it soon so the
+  time isn't given away: [booking form](THE_REAL_URL)."
+- If `BOOKING_FORM_URL` is "(none configured)", do **NOT** post any link. Say:
+  "To lock in your spot, our team will send you the booking form with the **$50
+  deposit** (it's adjusted into your facial) 💛 — I've got your details so we can
+  get that to you shortly." Never output a "Booking Form" link that goes nowhere.
 
 ## Booking confirmed
 - Confirm the specific date and time you agreed on, e.g. "You're all set for

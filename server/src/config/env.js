@@ -38,6 +38,12 @@ export const config = {
     historyLimit: Number(process.env.CHAT_HISTORY_LIMIT) || 20,
   },
 
+  booking: {
+    // Real GHL booking + deposit form URL. If empty, the bot must NOT invent a
+    // link — it says the team will send the form instead.
+    formUrl: process.env.BOOKING_FORM_URL || '',
+  },
+
   ghl: {
     apiKey: process.env.GHL_API_KEY || '',
     locationId: process.env.GHL_LOCATION_ID || '',

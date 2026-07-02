@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
+import { config } from '../config/env.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const PROMPTS_DIR = join(__dirname, '..', '..', 'prompts')
@@ -78,6 +79,12 @@ function currentDateTime() {
   return `${long}  (ISO: ${iso})`
 }
 
+function bookingFormLine() {
+  return config.booking.formUrl
+    ? `BOOKING_FORM_URL: ${config.booking.formUrl} — when it's time to send the booking/deposit form, share THIS exact URL as a markdown link. Never use any other link.`
+    : 'BOOKING_FORM_URL: (none configured) — do NOT invent, output, or link any booking form (no "[Booking Form](#)", no fake URL). When it\'s time for the form, say our team will send the booking + deposit form shortly, and collect their phone/email so we can. Never produce a placeholder or dead link.'
+}
+
 // Assemble the full system prompt for one turn.
 export function buildSystemPrompt({ contact, knowledge, channel }) {
   return [
@@ -85,6 +92,7 @@ export function buildSystemPrompt({ contact, knowledge, channel }) {
     '\n\n=== RUNTIME CONTEXT ===',
     `CURRENT DATE & TIME — studio local (America/Vancouver): ${currentDateTime()}`,
     'Treat the above as "today" for ALL scheduling. Never guess the year or invent a week range — compute "this week"/"next week" from it. Booking dates are naturally in the future; never tell a client a future date is invalid unless it is in the PAST relative to today.',
+    bookingFormLine(),
     `CHANNEL: ${channel || 'website'}`,
     formatKnownContact(contact),
     formatKnowledge(knowledge),
