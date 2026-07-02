@@ -8,18 +8,51 @@ export const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
-// Attach the Supabase access token so the backend can authorize admin calls.
-api.interceptors.request.use(async (config) => {
-  if (supabase) {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-    if (session?.access_token) {
-      config.headers.Authorization = `Bearer ${session.access_token}`
-    }
+// Return a valid access token, refreshing first if it's expired or about to be.
+// getSession() alone can hand back a stale token, which the backend rejects with
+// "Invalid or expired token" — so we refresh proactively.
+async function getFreshToken() {
+  if (!supabase) return null
+  let {
+    data: { session },
+  } = await supabase.auth.getSession()
+  if (!session) return null
+
+  const expiresSoon = session.expires_at && session.expires_at * 1000 < Date.now() + 60_000
+  if (expiresSoon) {
+    const { data } = await supabase.auth.refreshSession()
+    session = data?.session || session
   }
+  return session?.access_token || null
+}
+
+// Attach a fresh Supabase access token so the backend can authorize admin calls.
+api.interceptors.request.use(async (config) => {
+  const token = await getFreshToken()
+  if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })
+
+// If a call still comes back 401 (token expired mid-flight), refresh once and
+// retry the same request. If the refresh fails, the session is truly dead —
+// sign out so the app returns to the login screen.
+api.interceptors.response.use(
+  (res) => res,
+  async (error) => {
+    const original = error.config
+    if (error.response?.status === 401 && original && !original._retried && supabase) {
+      original._retried = true
+      const { data } = await supabase.auth.refreshSession()
+      const token = data?.session?.access_token
+      if (token) {
+        original.headers.Authorization = `Bearer ${token}`
+        return api(original)
+      }
+      await supabase.auth.signOut()
+    }
+    return Promise.reject(error)
+  },
+)
 
 // Typed helpers for every admin endpoint.
 export const adminApi = {
