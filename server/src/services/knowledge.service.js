@@ -10,10 +10,23 @@ export async function embed(text) {
   return res.data[0].embedding
 }
 
+// Cache whether the KB has any rows so we don't pay for an embeddings API call
+// on every message when there's nothing to search. Refreshed every 60s.
+let kbCache = { hasRows: null, at: 0 }
+async function knowledgeBaseHasRows() {
+  const now = Date.now()
+  if (kbCache.hasRows !== null && now - kbCache.at < 60_000) return kbCache.hasRows
+  const { count } = await supabase.from('knowledge_base').select('*', { count: 'exact', head: true })
+  kbCache = { hasRows: (count || 0) > 0, at: now }
+  return kbCache.hasRows
+}
+
 // RAG lookup. Returns [] gracefully if the KB is empty or anything fails, so the
 // chat flow never breaks just because knowledge isn't loaded yet.
 export async function searchKnowledge(query, { matchCount = 5, threshold = 0.2 } = {}) {
   try {
+    // Skip the embeddings round-trip entirely when there's nothing to retrieve.
+    if (!(await knowledgeBaseHasRows())) return []
     const embedding = await embed(query)
     const { data, error } = await supabase.rpc('match_knowledge', {
       query_embedding: embedding,
