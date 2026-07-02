@@ -4,6 +4,7 @@ import Avatar from './Avatar'
 
 export default function MessageList({ messages, sending, children }) {
   const bottomRef = useRef(null)
+  const lastId = messages[messages.length - 1]?.id
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -11,28 +12,36 @@ export default function MessageList({ messages, sending, children }) {
 
   return (
     <div className="scroll-slim flex-1 space-y-4 overflow-y-auto px-4 py-5">
-      {messages.map((m) =>
-        m.role === 'user' ? (
-          <div key={m.id} className="flex justify-end">
-            <div className="max-w-[80%] rounded-2xl rounded-br-md bg-[#4a441f] px-4 py-2.5 text-[15px] leading-relaxed text-white shadow-sm">
-              {m.text}
+      {messages.map((m) => {
+        if (m.role === 'user') {
+          return (
+            <div key={m.id} className="flex justify-end">
+              <div className="max-w-[80%] rounded-2xl rounded-br-md bg-[#4a441f] px-4 py-2.5 text-[15px] leading-relaxed text-white shadow-sm">
+                {m.text}
+              </div>
             </div>
-          </div>
-        ) : (
+          )
+        }
+        // While THIS bot message is still streaming, render plain text (cheap) —
+        // parsing markdown on every token blocks the UI thread and lags typing.
+        const isStreaming = sending && m.id === lastId
+        return (
           <div key={m.id} className="flex items-end gap-2">
             <Avatar size={34} />
             <div className="max-w-[82%] rounded-2xl rounded-bl-md bg-white px-4 py-3 text-[15px] leading-relaxed text-[#2b2820] shadow-sm ring-1 ring-black/5">
-              {m.text ? (
+              {!m.text ? (
+                <TypingDots />
+              ) : isStreaming ? (
+                <div className="whitespace-pre-wrap">{m.text}</div>
+              ) : (
                 <div className="md-body">
                   <ReactMarkdown>{m.text}</ReactMarkdown>
                 </div>
-              ) : (
-                <TypingDots />
               )}
             </div>
           </div>
-        ),
-      )}
+        )
+      })}
       {children}
       <div ref={bottomRef} />
     </div>

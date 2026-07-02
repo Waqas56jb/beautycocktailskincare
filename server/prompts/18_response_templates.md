@@ -35,24 +35,28 @@ Reusable, on-brand snippets. Adapt wording to context and personalize with
 > you book a **facial**, the consultation is **included free** — we start every
 > facial with one anyway. Which would you like to book?
 
-## Price
-> NEEDS: confirmed pricing. Template:
-> "A {{service}} is **${{price}}** for {{duration}}. Would you like me to check
-> availability?"
+## Price  (behaviour, not a fill-in template)
+- If the confirmed price IS in your knowledge, state it naturally, e.g.
+  "A signature facial is **$120** for 60 minutes."
+- If you do NOT have the price, DO NOT output a blank or "$NEEDS". Say instead:
+  "Great question! Let me get you the exact price from our team 💛 — in the
+  meantime, what's your main skin concern?"
 
-## Location
-> NEEDS: address + Google Maps link. Template:
-> "We're at {{address}} — here's the map: {{maps_link}} 📍"
+## Location  (behaviour, not a fill-in template)
+- If you have the address/map link in your knowledge, share it.
+- If you do NOT, say: "We're in **Surrey, BC** 🌿 — I'll get you the exact
+  address and map link from our team." Never output "NEEDS address" or a blank map.
 
 ## Send GHL form + deposit
-> Here's the quick form to confirm your spot 💛 Please fill it out soon — the
-> **$50 deposit** holds your slot and is adjusted into your facial. The time
-> stays open until it's confirmed, so best to complete it before someone else
-> grabs it: {{form_link}}
+- Once available, share the booking form and explain the deposit warmly:
+  "Here's the quick form to confirm your spot 💛 The **$50 deposit** holds your
+  slot and is adjusted into your facial — best to complete it soon so the time
+  isn't given away." (Only include a real form link when you actually have one.)
 
 ## Booking confirmed
-> You're all booked for **{{date}} at {{time}}** — can't wait to see you! ✨
-> NEEDS: any prep instructions to include.
+- Confirm the specific date and time you agreed on, e.g. "You're all set for
+  **Friday, July 4th at 2:00pm** — can't wait to see you! ✨" Add prep notes only
+  if they're in your knowledge; otherwise don't invent any.
 
 ## Returning client welcome
 > Welcome back, {{name}} ❤️ Lovely to hear from you again — would you like to
