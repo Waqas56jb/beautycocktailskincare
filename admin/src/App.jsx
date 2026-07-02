@@ -6,8 +6,9 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Leads from './pages/Leads'
 import Conversations from './pages/Conversations'
+import Users from './pages/Users'
 import Training from './pages/Training'
-import Settings from './pages/Settings'
+import Account from './pages/Account'
 
 export default function App() {
   const [session, setSession] = useState(null)
@@ -29,15 +30,9 @@ export default function App() {
   }, [])
 
   if (!ready) {
-    return (
-      <div className="flex h-full items-center justify-center text-gray-400">
-        Loading…
-      </div>
-    )
+    return <div className="flex h-full items-center justify-center text-gray-400">Loading…</div>
   }
 
-  // Gate the whole panel behind auth. With Supabase unconfigured we still show
-  // the login screen so the wiring is visible during setup.
   if (!session) return <Login />
 
   return (
@@ -46,8 +41,9 @@ export default function App() {
         <Route index element={<Dashboard />} />
         <Route path="leads" element={<Leads />} />
         <Route path="conversations" element={<Conversations />} />
+        <Route path="users" element={<Users />} />
         <Route path="training" element={<Training />} />
-        <Route path="settings" element={<Settings />} />
+        <Route path="account" element={<Account />} />
       </Route>
     </Routes>
   )
