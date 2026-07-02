@@ -3,6 +3,7 @@ import { config } from '../config/env.js'
 import { buildSystemPrompt } from '../lib/prompts.js'
 import { searchKnowledge } from './knowledge.service.js'
 import { getContact, findOrCreateContact } from './contacts.service.js'
+import { extractAndSave } from './extraction.service.js'
 import {
   getConversation,
   createConversation,
@@ -44,7 +45,7 @@ async function prepareTurn({ conversationId, text, visitor = {}, channel = 'webs
   ])
 
   const system = buildSystemPrompt({ contact, knowledge, channel })
-  return { conversationId: conversation.id, messages: toOpenAIMessages(system, history) }
+  return { conversationId: conversation.id, contact, messages: toOpenAIMessages(system, history) }
 }
 
 // Non-streaming: returns the full reply at once.
@@ -70,6 +71,7 @@ export async function handleChat(args) {
   }
 
   await touchConversation(prep.conversationId)
+  await extractAndSave(prep.conversationId, prep.contact) // persist memory / lead data
   return { conversationId: prep.conversationId, reply }
 }
 
@@ -108,5 +110,9 @@ export async function* streamChat(args) {
 
   await addMessage(prep.conversationId, 'bot', full || '…', { model: config.openai.model, streamed: true })
   await touchConversation(prep.conversationId)
+
+  // Tell the client we're done (it has the reply + conversationId) BEFORE the
+  // extraction step, so memory persistence never delays the next turn.
   yield { done: true, conversationId: prep.conversationId }
+  await extractAndSave(prep.conversationId, prep.contact)
 }

@@ -69,6 +69,9 @@ create index if not exists contacts_client_type_idx on contacts (client_type);
 create index if not exists contacts_tags_idx on contacts using gin (tags);
 create index if not exists contacts_ghl_idx on contacts (ghl_contact_id);
 
+-- Booking pipeline stage, inferred from the conversation (see extraction.service).
+alter table contacts add column if not exists booking_stage text;
+
 drop trigger if exists trg_contacts_updated on contacts;
 create trigger trg_contacts_updated before update on contacts
   for each row execute function set_updated_at();
