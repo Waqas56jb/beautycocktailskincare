@@ -4,7 +4,7 @@ import { adminApi, apiError } from '../lib/api'
 import { Card, PageHeader, Spinner, EmptyState, Badge, Button, Modal, Field, Input } from '../components/ui'
 
 export default function Users() {
-  const { user } = useOutletContext()
+  const { user, isAdmin } = useOutletContext()
   const [users, setUsers] = useState(null)
   const [error, setError] = useState(null)
   const [reveal, setReveal] = useState({}) // id -> bool
@@ -13,8 +13,23 @@ export default function Users() {
 
   const load = () => adminApi.users().then(setUsers).catch((e) => setError(apiError(e)))
   useEffect(() => {
-    load()
-  }, [])
+    if (isAdmin) load()
+  }, [isAdmin])
+
+  // Only admins may view accounts + credentials (backend also enforces this).
+  if (!isAdmin) {
+    return (
+      <div>
+        <PageHeader title="Admin Users" />
+        <Card className="p-10 text-center">
+          <p className="text-sm font-medium text-[#4a4636]">Admins only</p>
+          <p className="mt-1 text-sm text-[#a99f7d]">
+            You don't have permission to view or manage user accounts.
+          </p>
+        </Card>
+      </div>
+    )
+  }
 
   const onDelete = async (u) => {
     if (!confirm(`Delete admin user ${u.email}? This cannot be undone.`)) return
