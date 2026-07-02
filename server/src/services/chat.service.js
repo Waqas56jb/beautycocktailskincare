@@ -27,10 +27,13 @@ function toOpenAIMessages(system, history) {
  */
 export async function handleChat({ conversationId, text, visitor = {}, channel = 'website' }) {
   const message = String(text || '').trim()
+  // Empty / non-text inbound (e.g. a sticker or blank from IG/WhatsApp): degrade
+  // gracefully instead of erroring, so channel bridges never break.
   if (!message) {
-    const err = new Error('Message text is required')
-    err.status = 400
-    throw err
+    return {
+      conversationId: conversationId || null,
+      reply: "I didn't quite catch that 💛 Could you type your message again?",
+    }
   }
 
   // 1. Resolve conversation + contact (memory)
