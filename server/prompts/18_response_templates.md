@@ -10,9 +10,10 @@ Reusable, on-brand snippets. Adapt wording to context and personalize with
 ## Ask skin concern
 > I'd love to help! What's your main skin concern right now?
 
-## Ask contact details (only if missing)
-> What's the best email and phone number to reach you? That way we can get you
-> all set up 💛
+## Ask phone (only if missing — ask ONCE, don't ask for email)
+> What's the best number to reach you? That way we can get you all set up 💛
+(Do NOT ask for email — it's collected later by the booking form. Never re-ask
+the phone once given.)
 
 ## Reassure + move to availability
 > We can absolutely help with that ❤️ Are you looking to come in **this week or

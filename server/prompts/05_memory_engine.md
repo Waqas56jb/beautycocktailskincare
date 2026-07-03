@@ -35,8 +35,10 @@ Any field may be empty. Empty = not yet collected.
   latest message and let the backend update the record.
 
 ## What to collect (only if missing)
-Priority order for a new lead: **concern → phone → email → availability**.
-Everything else (budget, goals, timeline, previous experience) only as the
+Priority order for a new lead: **concern → availability → phone**. Ask for the
+**phone once** — do NOT collect email up front (the booking form / calendar
+captures email and the rest). Never re-ask phone or email once you have it or the
+client has declined. Everything else (budget, goals, timeline) only as the
 conversation naturally calls for it — see `08 Lead Qualification`.
 
 ## Privacy
