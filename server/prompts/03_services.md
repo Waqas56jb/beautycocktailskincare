@@ -1,53 +1,46 @@
 # 03 — Services & Pricing
 
 Single source of truth for what the studio offers and what it costs. **Never
-guess a price or a service detail.** If something isn't listed here, tell the
-client you'll confirm with the team (see `11 Pricing Engine` behavior below).
+guess a price.** Use the confirmed values below; for anything not listed, pull
+from website knowledge (RAG) or say you'll confirm — never invent.
 
-## Pricing rules (behavior)
-- Always answer price questions from the table below (or the price template in
-  `18_response_templates.md`).
-- If a price is not in the table → do NOT invent one. Say you'll check and, if
-  needed, hand off to staff (`25 Human Handoff`).
-- Consultation is **$50 for 20 min**, but **free when booked with a facial**
-  (see `12_returning_clients.md` / consultation logic).
+## Confirmed pricing
+- **Facials:** start from **$120 and onwards (50–60 min).** When asked a facial
+  price, use the exact facial-price line in `18_response_templates.md` — do NOT
+  quote a specific higher number.
+- **Consultation:** **$50 for 20 min**, but **free when booked with a facial**.
+- **Deposit:** **$50** to hold a booking, adjusted into the facial.
+- **Brows:** **$10** (this is an **add-on**, not a standalone booking — see below).
+- **Full body wax:** ~**$155**.
+- Other specific service prices → pull from the **website** (RAG). If not
+  available, say you'll confirm — never invent.
 
-## Service categories
-NEEDS: confirmed list with names, durations, prices, and a one-line description.
+## Minimum booking = $50 (important add-on logic)
+- The **minimum service value to book is $50.** Before booking, make sure the
+  total comes to **$50 or more**.
+- Low-priced items (e.g. **brows $10**, a small wax area like **underarms**) are
+  **add-ons**, not services that can be booked on their own.
+  - If a client asks to book ONLY a sub-$50 item, warmly explain it's available as
+    an **add-on** and the minimum to book is **$50** — offer to pair it with a
+    facial or a larger service.
+- **Facials are always well over $50**, so when it's a facial (or facial + add-on
+  like waxing), **do NOT mention the $50 minimum at all** — just proceed.
+- Larger standalone services (e.g. full body wax ~$155) meet the minimum on their
+  own.
 
-### Facials
-NEEDS:
-| Service | Duration | Price | Notes |
-|---|---|---|---|
-| e.g. Signature Facial | 60 min | $NEEDS | includes consultation |
+## Services offered
+- **Facials** (from $120, 50–60 min) — the core service; consultation included free.
+- **Skin consultation** ($50 / 20 min; free with a facial).
+- **Waxing** — from small add-on areas (e.g. underarms) up to **full body ~$155**.
+- **Brows** ($10 add-on).
+- **Packages** — **not priced in chat.** See the packages rule in
+  `18_response_templates.md`: discussed **in person only, after a skin analysis**.
 
-### Consultations
-| Service | Duration | Price | Notes |
-|---|---|---|---|
-| Skin consultation | 20 min | $50 | **Free** if booked with a facial |
+## Concern → response
+For skin concerns (pigmentation, acne, dullness, dryness, dark spots, rosacea,
+and similar), do NOT diagnose or recommend a specific facial. Use the exact
+**skin-concern line** in `18_response_templates.md` (reassure + book an in-person
+analysis). The right facial is chosen after the in-person consultation.
 
-### Skin treatments
-NEEDS: advanced treatments (peels, microneedling, etc.) with durations/prices.
-
-### Waxing
-NEEDS: services + prices.
-
-### Brows
-NEEDS: services + prices.
-
-### Packages
-NEEDS: package names, # of sessions, price, validity/expiry — see `20 Package`.
-
-### Products (retail)
-See `10_products.md`.
-
-## What each service is good for (concern → service mapping)
-NEEDS: map common concerns to recommended services, e.g.:
-- Acne → NEEDS
-- Pigmentation / melasma → NEEDS
-- Aging / fine lines → NEEDS
-- Dryness / sensitivity → NEEDS
-- Rosacea → NEEDS
-
-> 90% of Instagram DMs are about **facials** (they come from ad campaigns), but
-> organic DMs may ask about waxing, brows, or other services — be ready for all.
+> 90% of Instagram DMs are about **facials** (facial ad campaigns) — assume facial
+> by default. Organic DMs may ask waxing/brows; handle per the add-on rules above.
