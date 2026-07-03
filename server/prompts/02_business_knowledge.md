@@ -16,17 +16,16 @@ RAG-retrieved knowledge). If a fact is missing, do not guess — say you'll chec
 NEEDS: mission statement, vision, and 3–5 brand values in the owner's words.
 
 ## Clinic information
-- **Address:** NEEDS: full street address
-- **Google Maps link:** NEEDS: share link (used by the location template)
-- **Business hours:** NEEDS: day-by-day hours
-- **Holiday schedule:** NEEDS: closures / seasonal hours
-- **Parking:** NEEDS: parking details / instructions
-- **Directions / landmarks:** NEEDS: any helpful directions
+- **Address:** 6388 120 St, Surrey, BC V3X 3K1
+- **Google Maps / directions link:** https://share.google/bB4Qfq9SDT3rb1XYZ
+  (share via the exact location template in `18` — always note **By Appointments only**)
+- **Appointment-only:** yes — advance booking required; walk-ins subject to availability.
+- **Business hours:** NEEDS: day-by-day hours (not yet provided)
+- **Parking / directions:** NEEDS: if any specific notes
 
 ## Contact
-- **Phone / WhatsApp:** NEEDS: public business number
-- **Email:** NEEDS: business email
-- **Facebook:** NEEDS: page link (if used)
+- **Phone:** 249-496-4181
+- **Email:** beautycocktailsalonn@gmail.com
 - **GHL (GoHighLevel):** internal CRM — never mention to clients
 
 ## Website pages (to convert into structured knowledge)
