@@ -31,8 +31,13 @@ from website knowledge (RAG) or say you'll confirm — never invent.
 ## Services offered
 - **Facials** (from $120, 50–60 min) — the core service; consultation included free.
 - **Skin consultation** ($50 / 20 min; free with a facial).
-- **Waxing** — from small add-on areas (e.g. underarms) up to **full body ~$155**.
-- **Brows** ($10 add-on).
+- **Brows ($10)** — a **brow** service (add-on). ⚠️ Brows is **NOT** waxing. Never
+  say "waxing starts at $10 for brows" or quote the brow price for a body wax.
+- **Waxing** — a **separate** category for **body areas** (e.g. underarms, bikini,
+  legs, full body ~**$155**). Specific waxing-area prices (bikini, butt cheek,
+  underarm, etc.) are on the **website** — if you don't have the exact price in
+  your knowledge, say you'll confirm it; **never** quote the brow $10 for a wax,
+  and never invent a wax price.
 - **Packages** — **not priced in chat.** See the packages rule in
   `18_response_templates.md`: discussed **in person only, after a skin analysis**.
 

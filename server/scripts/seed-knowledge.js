@@ -5,7 +5,7 @@ import 'dotenv/config'
 import { supabase } from '../src/lib/supabase.js'
 import { addKnowledge } from '../src/services/knowledge.service.js'
 
-const SOURCE = 'website-policy'
+const SOURCE = 'policy' // allowed by knowledge_base.source CHECK constraint
 
 const CHUNKS = [
   {
