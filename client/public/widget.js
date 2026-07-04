@@ -32,7 +32,6 @@
       'border:none',
       'z-index:2147483646',
       'background:transparent',
-      'pointer-events:none',
       'color-scheme:light',
     ].join(';')
 

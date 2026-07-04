@@ -14,8 +14,12 @@ export default function ChatWidget() {
   const chat = useChat()
 
   useEffect(() => {
+    document.documentElement.classList.add('widget-embed')
     document.body.classList.add('widget-embed')
-    return () => document.body.classList.remove('widget-embed')
+    return () => {
+      document.documentElement.classList.remove('widget-embed')
+      document.body.classList.remove('widget-embed')
+    }
   }, [])
 
   const handleOpen = () => setOpen(true)
@@ -45,10 +49,15 @@ export default function ChatWidget() {
 
       <div className="widget-launcher-wrap">
         {!open && (
-          <div className="widget-tooltip" aria-hidden="true">
-            <span className="widget-tooltip__dot" />
+          <button
+            type="button"
+            className="widget-tooltip"
+            onClick={handleOpen}
+            aria-label={`Open chat with ${brand.botName}`}
+          >
+            <span className="widget-tooltip__dot" aria-hidden="true" />
             Chat with {brand.botName}
-          </div>
+          </button>
         )}
 
         <button

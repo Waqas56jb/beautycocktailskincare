@@ -107,13 +107,16 @@ body {
 
 /* ── Embeddable floating widget (/widget) ─────────────────────────────── */
 
+html.widget-embed,
 body.widget-embed {
   background: transparent !important;
   overflow: hidden;
+  pointer-events: none;
 }
 
 body.widget-embed #root {
   background: transparent;
+  pointer-events: none;
 }
 
 .widget-root {
@@ -139,6 +142,7 @@ body.widget-embed #root {
   align-items: center;
   gap: 0.5rem;
   padding: 0.55rem 1rem;
+  border: none;
   border-radius: 9999px;
   background: rgba(28, 26, 18, 0.92);
   color: #f6f0e5;
@@ -148,6 +152,15 @@ body.widget-embed #root {
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
   animation: widget-tooltip-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.8s both;
   backdrop-filter: blur(8px);
+  cursor: pointer;
+  pointer-events: auto;
+  font-family: inherit;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.widget-tooltip:hover {
+  transform: translateY(-1px);
+  background: rgba(28, 26, 18, 0.98);
 }
 
 .widget-tooltip__dot {
