@@ -22,6 +22,14 @@ export default function ChatWidget() {
     }
   }, [])
 
+  // Tell the embedding loader (parent page) to resize the iframe: tiny when
+  // closed (so the host page scrolls freely), expanded when open.
+  useEffect(() => {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: 'bcs-widget', state: open ? 'open' : 'closed' }, '*')
+    }
+  }, [open])
+
   const handleOpen = () => setOpen(true)
   const handleClose = () => setOpen(false)
   const handleStart = () => setStarted(true)
