@@ -6,6 +6,7 @@ import chatRoutes from './routes/chat.routes.js'
 import adminRoutes from './routes/admin.routes.js'
 import usersRoutes from './routes/users.routes.js'
 import dashboardRoutes from './routes/dashboard.routes.js'
+import webhooksRoutes from './routes/webhooks.routes.js'
 import { notFound, errorHandler } from './middleware/error.js'
 
 // Build the Express app WITHOUT calling listen(), so it can run both as a
@@ -29,6 +30,9 @@ app.get('/', (req, res) =>
   res.json({ service: 'Beauty Cocktail Skincare — Martini API', status: 'ok' }),
 )
 app.get('/health', (req, res) => res.json({ ok: true, env: config.nodeEnv }))
+
+// Webhooks (Meta / Instagram) — public, no auth
+app.use('/webhooks', webhooksRoutes)
 
 // API
 app.use('/api/chat', chatRoutes)

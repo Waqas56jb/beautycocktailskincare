@@ -44,6 +44,15 @@ export const config = {
     formUrl: process.env.BOOKING_FORM_URL || '',
   },
 
+  meta: {
+    accessToken: process.env.META_ACCESS_TOKEN || '',
+    accountId: process.env.META_ACCOUNT_ID || '',
+    verifyToken: process.env.META_VERIFY_TOKEN || '',
+    appSecret: process.env.META_APP_SECRET || '',
+    graphVersion: process.env.META_GRAPH_VERSION || 'v21.0',
+    graphBase: process.env.META_GRAPH_BASE || 'https://graph.facebook.com',
+  },
+
   ghl: {
     apiKey: process.env.GHL_API_KEY || '',
     locationId: process.env.GHL_LOCATION_ID || '',
