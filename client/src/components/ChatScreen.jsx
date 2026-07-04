@@ -3,10 +3,7 @@ import MessageList from './MessageList'
 import MessageInput from './MessageInput'
 import QuickOptions from './QuickOptions'
 
-export default function ChatScreen() {
-  const { messages, send, sending, error } = useChat()
-
-  // Show suggestion cards only until the visitor sends their first message.
+function ChatScreenContent({ messages, send, sending, error }) {
   const showOptions = messages.filter((m) => m.role === 'user').length === 0
 
   return (
@@ -20,4 +17,14 @@ export default function ChatScreen() {
       <MessageInput onSend={send} disabled={sending} />
     </div>
   )
+}
+
+function ChatScreenWithHook() {
+  const chat = useChat()
+  return <ChatScreenContent {...chat} />
+}
+
+export default function ChatScreen({ chat }) {
+  if (chat) return <ChatScreenContent {...chat} />
+  return <ChatScreenWithHook />
 }

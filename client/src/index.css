@@ -104,3 +104,220 @@ body {
   border-top: 1px solid #ece7db;
   margin: 0.7em 0;
 }
+
+/* ── Embeddable floating widget (/widget) ─────────────────────────────── */
+
+body.widget-embed {
+  background: transparent !important;
+  overflow: hidden;
+}
+
+body.widget-embed #root {
+  background: transparent;
+}
+
+.widget-root {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2147483646;
+}
+
+.widget-launcher-wrap {
+  position: fixed;
+  right: max(1.25rem, env(safe-area-inset-right));
+  bottom: max(1.25rem, env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.75rem;
+  pointer-events: auto;
+}
+
+.widget-tooltip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1rem;
+  border-radius: 9999px;
+  background: rgba(28, 26, 18, 0.92);
+  color: #f6f0e5;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
+  animation: widget-tooltip-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.8s both;
+  backdrop-filter: blur(8px);
+}
+
+.widget-tooltip__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  background: #3fbf5f;
+  box-shadow: 0 0 0 3px rgba(63, 191, 95, 0.25);
+  animation: widget-pulse 2s ease-in-out infinite;
+}
+
+.widget-launcher {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.widget-launcher:hover {
+  transform: scale(1.06);
+}
+
+.widget-launcher:active {
+  transform: scale(0.96);
+}
+
+.widget-launcher__ring {
+  position: absolute;
+  inset: -4px;
+  border-radius: 9999px;
+  border: 1.5px solid rgba(203, 180, 137, 0.55);
+  animation: widget-ring 2.8s ease-out infinite;
+}
+
+.widget-launcher__ring--delay {
+  animation-delay: 1.4s;
+}
+
+.widget-launcher__face {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(145deg, #6f6433 0%, #39331a 100%);
+  box-shadow:
+    0 12px 32px rgba(57, 51, 26, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.12) inset;
+}
+
+.widget-launcher--open .widget-launcher__face {
+  background: linear-gradient(145deg, #1c1a12 0%, #111 100%);
+}
+
+.widget-launcher__badge {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: #cbb489;
+  color: #3a341a;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.widget-panel {
+  position: fixed;
+  right: max(1.25rem, env(safe-area-inset-right));
+  bottom: calc(max(1.25rem, env(safe-area-inset-bottom)) + 76px);
+  width: min(400px, calc(100vw - 2rem));
+  height: min(620px, calc(100dvh - 7rem));
+  pointer-events: auto;
+  transform-origin: bottom right;
+  transition:
+    opacity 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    visibility 0.35s;
+}
+
+.widget-panel--closed {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(16px) scale(0.96);
+  pointer-events: none;
+}
+
+.widget-panel--open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+.widget-panel__inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 24px;
+  background: linear-gradient(to bottom, #f6f0e5, #efe6d4);
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.28),
+    0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+}
+
+.widget-panel__footer {
+  padding: 0.65rem 1rem 0.85rem;
+  text-align: center;
+  font-size: 10px;
+  color: #a99f7d;
+  border-top: 1px solid rgba(74, 68, 31, 0.08);
+  background: rgba(255, 255, 255, 0.25);
+}
+
+@keyframes widget-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1.45);
+    opacity: 0;
+  }
+}
+
+@keyframes widget-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@keyframes widget-tooltip-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 480px) {
+  .widget-panel {
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: calc(100dvh - 80px);
+    border-radius: 0;
+  }
+
+  .widget-panel__inner {
+    border-radius: 24px 24px 0 0;
+  }
+
+  .widget-launcher-wrap {
+    right: max(1rem, env(safe-area-inset-right));
+    bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+}

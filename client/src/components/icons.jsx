@@ -26,6 +26,19 @@ export function ArrowUpIcon({ className = 'h-5 w-5' }) {
   )
 }
 
+export function ChatBubbleIcon({ className = 'h-4 w-4' }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+      aria-hidden
+    >
+      <path d="M12 3c-4.97 0-9 3.58-9 8 0 1.57.52 3.03 1.41 4.24L3 21l5.36-2.08A10.8 10.8 0 0 0 12 19c4.97 0 9-3.58 9-8s-4.03-8-9-8z" />
+    </svg>
+  )
+}
+
 export function CloseIcon({ className = 'h-4 w-4' }) {
   return (
     <svg
