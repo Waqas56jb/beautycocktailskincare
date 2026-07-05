@@ -8,12 +8,39 @@ from website knowledge (RAG) or say you'll confirm — never invent.
 - **Facials:** start from **$120 and onwards (50–60 min).** When asked a facial
   price, use the exact facial-price line in `18_response_templates.md` — do NOT
   quote a specific higher number.
+  - **ALWAYS say "onwards" / "+" with a facial price — every single time**, even
+    when the client asks again or you give a breakdown. Never say a bare "$120"
+    as if it were the final price.
+  - For prices of **individually named facials** (HydraFacial, Tridosha, Oxy
+    Vital Glow, etc.), send the client to the website page:
+    **https://beautycocktailskincare.com/services/facials**
 - **Consultation:** **$50 for 20 min**, but **free when booked with a facial**.
 - **Deposit:** **$50** to hold a booking, adjusted into the facial.
 - **Brows:** **$10** (this is an **add-on**, not a standalone booking — see below).
-- **Full body wax:** ~**$155**.
-- Other specific service prices → pull from the **website** (RAG). If not
-  available, say you'll confirm — never invent.
+- **Dermaplaning:** **$79 for 30 min** — available as an **add-on OR an
+  individual service** (meets the $50 minimum on its own).
+
+## Confirmed WAXING prices (from the website — use these, never invent)
+Waxing page: **https://beautycocktailskincare.com/services/waxing**
+
+| Service | Price | Duration |
+| --- | --- | --- |
+| Full Body Wax (full arms + full legs + underarms + full back + belly) | **$155+** | **1.5 hours** |
+| Brazilian Wax — **includes buttocks (cheeks and strip)** | **$55+** | **20 min** |
+| Full Legs / Half Legs (**same price for half or full**) | **$55+** | **30 min** |
+| Full Arm / Half Arm (**same price for half or full**) | **$30+** | **20 min** |
+| Underarm Wax | **$15+** | **5 min** |
+| Smooth Belly Wax | **$15+** | — |
+| Back Wax | **$30+** | — |
+
+- Always quote wax prices **with the "+"** ("$55+") — never as a fixed final price.
+- **Half leg = full leg price ($55+, 30 min). Half arm = full arm price ($30+,
+  20 min).** If asked why, it's simply how our pricing works — same price either way.
+- **Brazilian wax INCLUDES the buttocks (cheeks and strip).** State this
+  definitively — never say "generally" or "typically" includes.
+- For any wax area NOT in this table (e.g. bikini-line-only, chin, upper lip),
+  do NOT guess — share the waxing page link and say the team will confirm.
+- For anything else not listed anywhere, say you'll confirm — never invent.
 
 ## Minimum booking = $50 (important add-on logic)
 - The **minimum service value to book is $50.** Before booking, make sure the
@@ -29,14 +56,14 @@ from website knowledge (RAG) or say you'll confirm — never invent.
   own.
 
 ## Services offered
-- **Facials** (from $120, 50–60 min) — the core service; consultation included free.
+- **Facials** (from $120 onwards, 50–60 min) — the core service; consultation
+  included free. Named-facial prices → website facials page (see above).
 - **Skin consultation** ($50 / 20 min; free with a facial).
+- **Dermaplaning ($79, 30 min)** — add-on or individual service.
 - **Brows ($10)** — a **brow** service (add-on). ⚠️ Brows is **NOT** waxing. Never
   say "waxing starts at $10 for brows" or quote the brow price for a body wax.
-- **Waxing** — a **separate** category for **body areas** (e.g. underarms, bikini,
-  legs, full body ~**$155**). Specific waxing-area prices (bikini, butt cheek,
-  underarm, etc.) are on the **website** — if you don't have the exact price in
-  your knowledge, say you'll confirm it; **never** quote the brow $10 for a wax,
+- **Waxing** — a **separate** category for **body areas**. Use ONLY the confirmed
+  waxing table above (from the website). **Never** quote the brow $10 for a wax,
   and never invent a wax price.
 - **Packages** — **not priced in chat.** See the packages rule in
   `18_response_templates.md`: discussed **in person only, after a skin analysis**.

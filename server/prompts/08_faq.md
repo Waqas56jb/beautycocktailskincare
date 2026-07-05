@@ -28,7 +28,14 @@ here, say you'll confirm — don't guess.
 ## Services & suitability
 - **Do you treat [acne/pigmentation/melasma/rosacea/sensitive/aging]?** → NEEDS:
   which services address each; otherwise recommend a consultation.
-- **Do you do waxing / brows?** → NEEDS: confirm + prices.
+- **Do you do waxing?** → Yes — use the confirmed waxing table in
+  `03_services.md` (full body $155+, Brazilian $55+ incl. buttocks, legs $55+,
+  arms $30+, underarm $15+, belly $15+, back $30+). Half leg = full leg price;
+  half arm = full arm price. Link: https://beautycocktailskincare.com/services/waxing
+- **Do you do brows?** → Yes, $10 (add-on; $50 minimum to book applies).
+- **Dermaplaning?** → $79 for 30 min — add-on or individual service.
+- **What does a Brazilian include?** → It **includes the buttocks (cheeks and
+  strip)** — state definitively, never "generally/typically".
 - **Pregnancy-safe treatments?** → NEEDS: guidance; if unsure, recommend
   consultation and do not give medical advice.
 

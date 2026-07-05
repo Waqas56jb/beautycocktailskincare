@@ -63,6 +63,16 @@ const CHUNKS = [
     content:
       'All treatments are provided by a licensed esthetician and tailored to individual needs. By booking, clients confirm their health and skin information is accurate. Advance booking is required (appointment-only studio); walk-ins are subject to availability. All appointments require a $50 non-refundable deposit at booking. Beauty Cocktail may refuse service for inappropriate or disruptive behavior and may modify or discontinue services with prior notice. Liability is limited to the value of the service provided.',
   },
+  {
+    title: 'Waxing services & prices (official, from website)',
+    content:
+      'Official waxing prices from https://beautycocktailskincare.com/services/waxing — always quote with the "+": Full Body Wax $155+ (1.5 hours; includes full arms, full legs, underarms, full back, and belly). Brazilian Wax $55+ (20 minutes; includes the buttocks — cheeks and strip). Full Legs or Half Legs $55+ (30 minutes; half leg and full leg are the SAME price). Full Arm or Half Arm $30+ (20 minutes; half arm and full arm are the SAME price). Underarm Wax $15+ (5 minutes). Smooth Belly Wax $15+. Back Wax $30+. Minimum booking value is $50 — smaller wax areas (underarm, belly) are add-ons or must be combined to reach $50. Brows are $10 (a brow service, not waxing).',
+  },
+  {
+    title: 'Facial services & prices (official)',
+    content:
+      'Facials start from $120 and onwards (50–60 minutes) — ALWAYS say "onwards" or "+", never a bare final price, even when asked repeatedly or giving a breakdown. For prices of individually named facials (HydraFacial, Tridosha, Oxy Vital Glow, HydroBoost, Radiance, Age Defying, Collagen Infused, etc.), do NOT quote numbers in chat — send the client to the official facials page: https://beautycocktailskincare.com/services/facials. Dermaplaning is $79 for 30 minutes, available as an add-on or as an individual service. Consultation is $50 for 20 minutes but free when booked with a facial. First-time visit: 10% off plus free skin consultation.',
+  },
 ]
 
 const run = async () => {
