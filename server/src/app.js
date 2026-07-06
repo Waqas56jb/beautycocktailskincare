@@ -29,7 +29,16 @@ app.use(express.json({ limit: '1mb' }))
 app.get('/', (req, res) =>
   res.json({ service: 'Beauty Cocktail Skincare — Martini API', status: 'ok' }),
 )
-app.get('/health', (req, res) => res.json({ ok: true, env: config.nodeEnv }))
+app.get('/health', (req, res) =>
+  res.json({
+    ok: true,
+    env: config.nodeEnv,
+    // non-secret booleans so we can confirm which integrations are configured
+    ghl: Boolean(config.ghl.apiKey && config.ghl.locationId),
+    ghlCalendars: Boolean(config.ghl.calendars.facial && config.ghl.calendars.wax),
+    meta: Boolean(config.meta.accessToken),
+  }),
+)
 
 // Webhooks (Meta / Instagram) — public, no auth
 app.use('/webhooks', webhooksRoutes)
