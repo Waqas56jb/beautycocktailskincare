@@ -85,6 +85,12 @@ function bookingFormLine() {
     : 'BOOKING_FORM_URL: (none configured) — do NOT invent, output, or link any booking form (no "[Booking Form](#)", no fake URL). When it\'s time for the form, say our team will send the booking + deposit form shortly, and collect their phone/email so we can. Never produce a placeholder or dead link.'
 }
 
+function availabilityLine() {
+  return config.ghl.apiKey && config.ghl.locationId
+    ? 'AVAILABILITY: You HAVE a `check_availability` tool wired to the live calendar. To answer any availability/booking/time question you MUST call it (service = facial or wax) and present the real slots. NEVER say "one moment please", "let me check", or "I\'ll get back to you" without calling the tool — that is a failure.'
+    : 'AVAILABILITY: No live calendar is connected right now. Do NOT say "one moment please" / "let me check" / "I\'ll get back to you" and then go silent. Instead, ask for their preferred date and tell them our team will confirm the exact open time shortly, then continue collecting phone / consultation-vs-facial.'
+}
+
 // Assemble the full system prompt for one turn.
 export function buildSystemPrompt({ contact, knowledge, channel }) {
   return [
@@ -92,6 +98,7 @@ export function buildSystemPrompt({ contact, knowledge, channel }) {
     '\n\n=== RUNTIME CONTEXT ===',
     `CURRENT DATE & TIME — studio local (America/Vancouver): ${currentDateTime()}`,
     'Treat the above as "today" for ALL scheduling. Never guess the year or invent a week range — compute "this week"/"next week" from it. Booking dates are naturally in the future; never tell a client a future date is invalid unless it is in the PAST relative to today.',
+    availabilityLine(),
     bookingFormLine(),
     `CHANNEL: ${channel || 'website'}`,
     formatKnownContact(contact),
