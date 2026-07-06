@@ -2,6 +2,14 @@ import { useEffect, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 import Avatar from './Avatar'
 
+// Force every link to open in a NEW TAB so clicking a link never navigates the
+// chat away (which would lose the conversation).
+const mdComponents = {
+  a: ({ node, ...props }) => (
+    <a {...props} target="_blank" rel="noopener noreferrer" />
+  ),
+}
+
 export default function MessageList({ messages, sending, children }) {
   const bottomRef = useRef(null)
   const lastId = messages[messages.length - 1]?.id
@@ -35,7 +43,7 @@ export default function MessageList({ messages, sending, children }) {
                 <div className="whitespace-pre-wrap">{m.text}</div>
               ) : (
                 <div className="md-body">
-                  <ReactMarkdown>{m.text}</ReactMarkdown>
+                  <ReactMarkdown components={mdComponents}>{m.text}</ReactMarkdown>
                 </div>
               )}
             </div>

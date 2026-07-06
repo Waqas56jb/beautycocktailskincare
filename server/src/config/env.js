@@ -44,6 +44,19 @@ export const config = {
     formUrl: process.env.BOOKING_FORM_URL || '',
   },
 
+  ghl: {
+    apiKey: process.env.GHL_API_KEY || '',
+    locationId: process.env.GHL_LOCATION_ID || '',
+    timezone: process.env.GHL_TIMEZONE || 'America/Vancouver',
+    calendars: {
+      facial: process.env.GHL_CALENDAR_FACIAL || '',
+      wax: process.env.GHL_CALENDAR_WAX || '',
+      package: process.env.GHL_CALENDAR_PACKAGE || '',
+    },
+    base: 'https://services.leadconnectorhq.com',
+    version: '2021-07-28',
+  },
+
   meta: {
     accessToken: process.env.META_ACCESS_TOKEN || '',
     accountId: process.env.META_ACCOUNT_ID || '',
@@ -51,10 +64,5 @@ export const config = {
     appSecret: process.env.META_APP_SECRET || '',
     graphVersion: process.env.META_GRAPH_VERSION || 'v21.0',
     graphBase: process.env.META_GRAPH_BASE || 'https://graph.facebook.com',
-  },
-
-  ghl: {
-    apiKey: process.env.GHL_API_KEY || '',
-    locationId: process.env.GHL_LOCATION_ID || '',
   },
 }

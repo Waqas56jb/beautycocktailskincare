@@ -2,6 +2,8 @@ import { openai } from '../lib/openai.js'
 import { config } from '../config/env.js'
 import { updateContact } from './contacts.service.js'
 import { getRecentMessages } from './conversations.service.js'
+import { ghlEnabled } from './ghl.service.js'
+import { syncContactToGHL } from './booking.service.js'
 
 const SCHEMA_HINT = `Return ONLY a JSON object with these keys (use null when unknown — never guess):
 {
@@ -82,6 +84,22 @@ export async function extractAndSave(conversationId, contact) {
 
     if (Object.keys(patch).length) {
       await updateContact(contact.id, patch)
+    }
+
+    // Sync the lead to GHL once we have a phone number (best-effort). Stores the
+    // GHL contact id back on our contact so later booking can reference it.
+    const phone = patch.phone || contact.phone
+    if (phone && ghlEnabled() && !contact.ghl_contact_id) {
+      const ghlContact = await syncContactToGHL({
+        name: patch.name || contact.name,
+        phone,
+        email: patch.email || contact.email,
+        concern: patch.concern || contact.concern,
+        tags: ['hot new lead'],
+      })
+      if (ghlContact?.id) {
+        await updateContact(contact.id, { ghl_contact_id: ghlContact.id }).catch(() => {})
+      }
     }
   } catch (err) {
     // Never let memory extraction break the chat — it's best-effort.
