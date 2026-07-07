@@ -9,6 +9,8 @@ import {
 } from './ghl.service.js'
 
 const SERVICE_MINUTES = { facial: 60, wax: 30 }
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 function fmtTime(iso) {
   const m = iso.match(/(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})/)
@@ -21,6 +23,31 @@ function fmtTime(iso) {
   return { day, iso, label: `${h12}:${min} ${ampm}` }
 }
 
+// Pacific "today" and "tomorrow" as YYYY-MM-DD, so slot dates are labeled
+// correctly (the model must never guess today/tomorrow itself).
+function pacificDayRefs() {
+  const now = new Date()
+  const todayStr = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Vancouver',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(now)
+  const [y, m, d] = todayStr.split('-').map(Number)
+  const tmw = new Date(Date.UTC(y, m - 1, d + 1))
+  const tomorrowStr = `${tmw.getUTCFullYear()}-${String(tmw.getUTCMonth() + 1).padStart(2, '0')}-${String(tmw.getUTCDate()).padStart(2, '0')}`
+  return { todayStr, tomorrowStr }
+}
+
+function dateLabel(dayStr, todayStr, tomorrowStr) {
+  const [y, m, d] = dayStr.split('-').map(Number)
+  const wd = WEEKDAYS[new Date(Date.UTC(y, m - 1, d)).getUTCDay()]
+  const base = `${wd}, ${MONTHS[m - 1]} ${d}`
+  if (dayStr === todayStr) return `Today (${base})`
+  if (dayStr === tomorrowStr) return `Tomorrow (${base})`
+  return base
+}
+
 // Tool the model calls to get REAL open slots, clustered from noon.
 export async function checkAvailability({ service = 'facial' } = {}) {
   const cal = service === 'wax' ? CALENDARS.wax : CALENDARS.facial
@@ -30,18 +57,19 @@ export async function checkAvailability({ service = 'facial' } = {}) {
     const end = now + 14 * 864e5
     const slotsByDay = await getFreeSlots(cal, now, end)
     const clustered = clusterSlots(slotsByDay, 12) // ordered best-first (no-gap clustering)
-    // Ordered options, best (most clustered) first. The bot offers only the top
-    // 1–2 and moves down as the client declines — do NOT list them all at once.
+    const { todayStr, tomorrowStr } = pacificDayRefs()
+    // Ordered options, best (most clustered) first. Each carries an exact
+    // date label so the bot never has to compute today/tomorrow itself.
     const options = clustered.map((iso) => {
       const { day, label } = fmtTime(iso)
-      return { date: day, time: label, iso }
+      return { dateLabel: dateLabel(day, todayStr, tomorrowStr), time: label, iso }
     })
     return {
       available: options.length > 0,
       service,
       options,
       instruction:
-        'Offer ONLY the first 1–2 options to the client (they are ordered to avoid gaps between bookings). If they decline, offer the NEXT 1–2. Never list them all at once.',
+        'Present slots using each option\'s EXACT `dateLabel` verbatim (e.g. "Tomorrow (Wednesday, Jul 8) at 1:00 PM"). Do NOT recompute today/tomorrow yourself. Offer ONLY the first 1–2 options; if declined, offer the next 1–2. Never list them all at once.',
     }
   } catch (e) {
     console.warn('checkAvailability failed:', e.message)
