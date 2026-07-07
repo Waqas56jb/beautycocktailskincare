@@ -115,6 +115,18 @@ function ghlTagsLine(tags) {
   ].join('\n')
 }
 
+function securityLine(channel) {
+  if (channel === 'instagram' || channel === 'whatsapp') {
+    return 'SECURITY: This is a verified channel (the person is identified by the platform) — you MAY handle reschedule / cancel / booking-status / past-session requests directly.'
+  }
+  return [
+    'SECURITY — this is the WEBSITE (visitor identity is NOT verified). This rule OVERRIDES everything else:',
+    '- For ANY request about an EXISTING booking or personal history — reschedule, cancel, "do I have a booking?", deposit/payment status, or past/previous sessions — do NOT look it up, do NOT confirm or deny whether they have a booking, do NOT act on it, and do NOT ask for their phone for this purpose (anyone could know a phone number).',
+    '- Instead, ALWAYS redirect them warmly to our verified channels (include BOTH links): "For your security, I can\'t change an existing booking or share personal account details here 💛. Please reach us on WhatsApp or Instagram so our team can verify you and help securely — WhatsApp: https://wa.me/12494964181 · Instagram: https://www.instagram.com/beautycocktail_skincare_surrey"',
+    '- **New bookings and general enquiries are perfectly fine here** — proceed normally. This redirect is ONLY for existing-booking changes and personal history.',
+  ].join('\n')
+}
+
 // Assemble the full system prompt for one turn.
 export function buildSystemPrompt({ contact, knowledge, channel, ghlTags }) {
   return [
@@ -122,6 +134,7 @@ export function buildSystemPrompt({ contact, knowledge, channel, ghlTags }) {
     '\n\n=== RUNTIME CONTEXT ===',
     `CURRENT DATE & TIME — studio local (America/Vancouver): ${currentDateTime()}`,
     'Treat the above as "today" for ALL scheduling. Never guess the year or invent a week range — compute "this week"/"next week" from it. Booking dates are naturally in the future; never tell a client a future date is invalid unless it is in the PAST relative to today.',
+    securityLine(channel),
     availabilityLine(),
     ghlTagsLine(ghlTags),
     `CHANNEL: ${channel || 'website'}`,
