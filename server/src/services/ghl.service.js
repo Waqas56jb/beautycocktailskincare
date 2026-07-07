@@ -45,24 +45,43 @@ export async function getFreeSlots(calendarId, startMs, endMs) {
   return out
 }
 
-// Cluster slots per the owner's rules: start from 12pm; prefer slots closest to
-// noon / to existing bookings so there are no long gaps. Returns a flat list of
-// ISO times, soonest days first, up to `limit`.
-export function clusterSlots(slotsByDay, limit = 6) {
-  const noonMinutes = 12 * 60
-  const scored = []
-  for (const [day, slots] of Object.entries(slotsByDay)) {
-    for (const iso of slots) {
-      // Read the wall-clock hour/min from the slot's OWN timezone (the offset in
-      // the ISO string), not the server's timezone.
-      const m = iso.match(/T(\d{2}):(\d{2})/)
-      const mins = m ? Number(m[1]) * 60 + Number(m[2]) : 0
-      // distance from noon → prefer noon-ward slots first (owner rule)
-      scored.push({ iso, day, distance: Math.abs(mins - noonMinutes) })
+// Owner's clustering rule: fill the day with NO gaps. Offer free slots that sit
+// right next to an existing booking (or, on an empty day, anchor at 12pm), then
+// progressively farther slots as fallbacks. Returns a flat ISO list, best-first,
+// earliest day first — the bot offers the top 1–2 and works down as they decline.
+const OPEN_MIN = 11 * 60 // 11:00
+const CLOSE_MIN = 19 * 60 // 19:00
+const INTERVAL = 30
+const DUR = 60 // service length used to build the possible-start grid
+
+function minsOfIso(iso) {
+  const m = iso.match(/T(\d{2}):(\d{2})/)
+  return m ? Number(m[1]) * 60 + Number(m[2]) : 0
+}
+
+export function clusterSlots(slotsByDay, limit = 12) {
+  const ordered = []
+  const days = Object.keys(slotsByDay).sort()
+  for (const day of days) {
+    const isos = slotsByDay[day] || []
+    const pairs = isos.map((iso) => ({ iso, mins: minsOfIso(iso) }))
+    const freeSet = new Set(pairs.map((p) => p.mins))
+
+    // Which business-hour start slots are occupied (booked or blocked)?
+    const occupied = []
+    for (let t = OPEN_MIN; t + DUR <= CLOSE_MIN; t += INTERVAL) {
+      if (!freeSet.has(t)) occupied.push(t)
     }
+
+    for (const p of pairs) {
+      p.score = occupied.length
+        ? Math.min(...occupied.map((o) => Math.abs(o - p.mins))) // adjacency to a booking
+        : Math.abs(p.mins - 12 * 60) // empty day → anchor at noon
+    }
+    pairs.sort((a, b) => a.score - b.score || a.mins - b.mins)
+    for (const p of pairs) ordered.push(p.iso)
   }
-  scored.sort((a, b) => (a.day < b.day ? -1 : a.day > b.day ? 1 : a.distance - b.distance))
-  return scored.slice(0, limit).map((s) => s.iso)
+  return ordered.slice(0, limit)
 }
 
 // ── Contacts ───────────────────────────────────────────────────────────────

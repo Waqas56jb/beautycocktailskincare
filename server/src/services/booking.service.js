@@ -29,14 +29,20 @@ export async function checkAvailability({ service = 'facial' } = {}) {
     const now = Date.now()
     const end = now + 14 * 864e5
     const slotsByDay = await getFreeSlots(cal, now, end)
-    const clustered = clusterSlots(slotsByDay, 8) // clustered from 12pm
-    const byDay = {}
-    for (const iso of clustered) {
+    const clustered = clusterSlots(slotsByDay, 12) // ordered best-first (no-gap clustering)
+    // Ordered options, best (most clustered) first. The bot offers only the top
+    // 1–2 and moves down as the client declines — do NOT list them all at once.
+    const options = clustered.map((iso) => {
       const { day, label } = fmtTime(iso)
-      ;(byDay[day] ||= []).push({ time: label, iso })
+      return { date: day, time: label, iso }
+    })
+    return {
+      available: options.length > 0,
+      service,
+      options,
+      instruction:
+        'Offer ONLY the first 1–2 options to the client (they are ordered to avoid gaps between bookings). If they decline, offer the NEXT 1–2. Never list them all at once.',
     }
-    const days = Object.entries(byDay).map(([date, times]) => ({ date, times }))
-    return { available: days.length > 0, service, days }
   } catch (e) {
     console.warn('checkAvailability failed:', e.message)
     return { available: false, reason: 'error' }

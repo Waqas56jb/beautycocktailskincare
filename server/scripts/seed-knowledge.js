@@ -18,7 +18,8 @@ const CHUNKS = [
   {
     title: 'Arrival help & late arrivals',
     content:
-      'If a client says they have arrived, are early, or cannot find the place before their appointment, help them warmly: "We are inside Urban Cave — please enter from the front side on 120 Street, have a seat, and we will get you shortly." ' +
+      'Only give the entry/arrival instructions when the client has a CONFIRMED booking that is happening very soon (today / within about 1-2 hours) — e.g. they say they have arrived or are on their way. Then: "We are inside Urban Cave — please enter from the front side on 120 Street, have a seat, and we will get you shortly." ' +
+      'If someone just asks for directions or the address and does NOT have an imminent confirmed booking, share the address and Google map link only, and mention that full directions and entry instructions will be included in the reminder we send on the morning of their appointment. Do NOT give the "enter from the front / have a seat" instructions prematurely. ' +
       'Late arrivals: up to 15 minutes late is okay. If they will be MORE than 15 minutes late, mention the policy — more than 15 minutes late counts as the session being used, but we may still help with the leftover time slot if possible.',
   },
   {
