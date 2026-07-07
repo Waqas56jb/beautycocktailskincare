@@ -45,38 +45,48 @@ export async function getFreeSlots(calendarId, startMs, endMs) {
   return out
 }
 
-// Owner's clustering rule: fill the day with NO gaps. Offer free slots that sit
-// right next to an existing booking (or, on an empty day, anchor at 12pm), then
-// progressively farther slots as fallbacks. Returns a flat ISO list, best-first,
-// earliest day first — the bot offers the top 1–2 and works down as they decline.
-const OPEN_MIN = 11 * 60 // 11:00
-const CLOSE_MIN = 19 * 60 // 19:00
-const INTERVAL = 30
-const DUR = 60 // service length used to build the possible-start grid
+// Owner's clustering rule: fill the day with NO gaps. Works purely from GHL's
+// real free slots (which already reflect staff availability + bookings + calendar
+// rules) — no hardcoded time grid. A "gap" (a jump between consecutive free slots
+// bigger than the normal step) means a booking sits there, so the free slots on
+// either EDGE of that gap are preferred (cluster next to bookings). On a fully-open
+// day (no gaps) we anchor at 12pm. Returns a flat ISO list, best-first, earliest
+// day first — the bot offers the top 1–2 and works down.
+const NOON = 12 * 60
 
 function minsOfIso(iso) {
   const m = iso.match(/T(\d{2}):(\d{2})/)
   return m ? Number(m[1]) * 60 + Number(m[2]) : 0
 }
 
-export function clusterSlots(slotsByDay, limit = 12) {
+export function clusterSlots(slotsByDay, limit = 40) {
   const ordered = []
   const days = Object.keys(slotsByDay).sort()
   for (const day of days) {
-    const isos = slotsByDay[day] || []
-    const pairs = isos.map((iso) => ({ iso, mins: minsOfIso(iso) }))
-    const freeSet = new Set(pairs.map((p) => p.mins))
+    const pairs = (slotsByDay[day] || [])
+      .map((iso) => ({ iso, mins: minsOfIso(iso) }))
+      .sort((a, b) => a.mins - b.mins)
+    if (!pairs.length) continue
 
-    // Which business-hour start slots are occupied (booked or blocked)?
-    const occupied = []
-    for (let t = OPEN_MIN; t + DUR <= CLOSE_MIN; t += INTERVAL) {
-      if (!freeSet.has(t)) occupied.push(t)
+    const mins = pairs.map((p) => p.mins)
+    // Normal step between adjacent free slots (smallest consecutive gap).
+    let step = 60
+    if (mins.length > 1) {
+      let mn = Infinity
+      for (let i = 1; i < mins.length; i++) mn = Math.min(mn, mins[i] - mins[i - 1])
+      step = mn
     }
-
+    // Slots sitting right next to a booked GAP (a jump > step between free slots) —
+    // day boundaries (first/last) don't count as bookings.
+    const nearGap = new Set()
+    for (let i = 0; i < pairs.length; i++) {
+      const prevGap = i > 0 && mins[i] - mins[i - 1] > step
+      const nextGap = i < pairs.length - 1 && mins[i + 1] - mins[i] > step
+      if (prevGap || nextGap) nearGap.add(pairs[i].mins)
+    }
     for (const p of pairs) {
-      p.score = occupied.length
-        ? Math.min(...occupied.map((o) => Math.abs(o - p.mins))) // adjacency to a booking
-        : Math.abs(p.mins - 12 * 60) // empty day → anchor at noon
+      const base = nearGap.has(p.mins) ? 0 : nearGap.size > 0 ? 100000 : 0
+      p.score = base + Math.abs(p.mins - NOON) // gap-adjacent first, then noon-ward
     }
     pairs.sort((a, b) => a.score - b.score || a.mins - b.mins)
     for (const p of pairs) ordered.push(p.iso)
