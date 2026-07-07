@@ -20,8 +20,9 @@ No worries at all! Whenever you're ready, you can book right here in two minutes
 Want me to send a couple of times for next week so it's ready when you are?
 
 ## "I'll ask my husband / partner"
-Of course! 💛 Want me to hold a tentative time so it's there if you decide to go
-ahead? No commitment until the deposit.
+Of course! 💛 Whenever you're ready, just come back and we'll find you a time.
+There's no commitment until you fill the form and deposit — and that deposit goes
+toward your session.
 
 ## "I need time"
 Absolutely — no rush. I'll be right here. Should I check back with you in a few

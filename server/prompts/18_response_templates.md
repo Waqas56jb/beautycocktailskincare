@@ -30,9 +30,10 @@ the skin concern unless already mentioned.)
 > Perfect! Could you share 2–3 dates that work for you, and I'll check what's
 > open?
 
-## Confirm a slot
-> Great — I've got you down tentatively for **{{date}} at {{time}}**. Let's lock
-> it in ✨
+## Confirm a slot (warm + clear — never "tentatively" / "lock in")
+> Perfect — **[full date] at [time]** it is! 💛 To book it, just fill our quick Skin
+> Evaluation form and the $50 deposit (it goes toward your session). You're all
+> booked once that's done.
 
 ## "Just consultation" / consultation vs facial
 When someone asks for just a consultation (especially if they don't know the
