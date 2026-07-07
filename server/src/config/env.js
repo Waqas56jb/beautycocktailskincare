@@ -57,6 +57,16 @@ export const config = {
     version: '2021-07-28',
   },
 
+  sms: {
+    // Auto text-back sent when a call comes in and isn't answered (missed-call
+    // text-back). Editable via env without a redeploy of logic. "JT" = the owner.
+    missedCallMessage:
+      process.env.SMS_MISSED_CALL_MESSAGE ||
+      "Hi! It looks like JT is unavailable for a call right now 💛 This is Martini from Beauty Cocktail Skincare — I can help you right here over text. What can I do for you?",
+    // Optional shared secret to verify GHL/Twilio webhooks (checked if set).
+    webhookSecret: process.env.GHL_WEBHOOK_SECRET || '',
+  },
+
   meta: {
     accessToken: process.env.META_ACCESS_TOKEN || '',
     accountId: process.env.META_ACCOUNT_ID || '',

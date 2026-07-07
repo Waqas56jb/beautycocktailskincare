@@ -4,10 +4,12 @@ import {
   getAppointments,
   clusterSlots,
   upsertContact,
+  getContactTags,
   addNote,
   createAppointment,
   CALENDARS,
 } from './ghl.service.js'
+import { updateContact } from './contacts.service.js'
 
 // How many appointments would be back-to-back if `[candStart, candEnd]` is booked?
 // (Existing appts whose end === a start chain together.) Owner rule: max 3.
@@ -32,7 +34,9 @@ function consecutiveIfBooked(candStart, candEnd, appts) {
   return count
 }
 
-const SERVICE_MINUTES = { facial: 60, wax: 30 }
+// Total duration of the whole visit, so the slot we cluster/offer actually fits
+// everything the client is having. facial_wax = facial (60) + wax (30) back-to-back.
+const SERVICE_MINUTES = { facial: 60, wax: 30, facial_wax: 90 }
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
@@ -94,6 +98,8 @@ function normalizeDate(date, todayStr, tomorrowStr) {
 // `date` (optional) focuses the answer on one day so the model doesn't have to
 // scan the whole list (which caused hallucinated / wrong "fully booked" replies).
 export async function checkAvailability({ service = 'facial', date } = {}) {
+  // facial_wax (combo) and facial both anchor on the facial calendar; only wax-only
+  // uses the wax calendar. The TOTAL duration drives which slot fits + clustering.
   const cal = service === 'wax' ? CALENDARS.wax : CALENDARS.facial
   if (!ghlEnabled() || !cal) return { available: false, reason: 'calendar_not_connected' }
   try {
@@ -134,6 +140,7 @@ export async function checkAvailability({ service = 'facial', date } = {}) {
     const result = {
       available: days.length > 0,
       service,
+      totalMinutes: serviceMins, // whole-visit length the offered slot must fit
       todayDate: dateLabel(todayStr), // e.g. "Tuesday, July 8"
       tomorrowDate: dateLabel(tomorrowStr), // e.g. "Wednesday, July 9"
       days, // availability per day (with isToday/isTomorrow flags)
@@ -149,7 +156,7 @@ export async function checkAvailability({ service = 'facial', date } = {}) {
       const label = /^\d{4}-\d{2}-\d{2}$/.test(target) ? dateLabel(target) : target
       if (match) {
         result.requested = { date: target, dateLabel: label, available: true, times: match.times }
-        result.instruction = `The client asked about ${label}. It IS OPEN at these exact times (best-first): ${match.times.join(', ')}. Offer the first 1–3 (if they gave a rough time like "afternoon", offer the ones that fit but never claim it's the "only" time if others are listed). Use "${label}" verbatim. Do NOT say it is booked. Never invent a time not in this list.`
+        result.instruction = `The client asked about ${label}. It IS OPEN at these exact times, best-first (already clustered — the FIRST one is the best back-to-back slot): ${match.times.join(', ')}. SUGGEST JUST THE FIRST TIME as your recommendation (you may add "or" ONE alternative at most) — do NOT list all of them. If they gave a rough time like "afternoon", pick the first that fits. Only offer more times if they decline. Use "${label}" verbatim, never say it is booked, never invent a time not in this list.`
       } else {
         const alt = options.slice(0, 3).map((o) => `${o.dateLabel} ${o.time}`).join('; ')
         result.requested = { date: target, dateLabel: label, available: false }
@@ -183,6 +190,45 @@ export async function syncContactToGHL({ name, phone, email, concern, tags = [] 
   } catch (e) {
     console.warn('syncContactToGHL failed:', e.message)
     return null
+  }
+}
+
+// Link this chat to the customer's GHL record by phone, and read back their live
+// booking status (form submitted / deposit paid). Used to (1) tie an anonymous
+// website chat to GHL BEFORE sending the form, and (2) reconnect a chat when the
+// client says they filled the form/paid but we have no record for this thread —
+// because GHL tags live on the CONTACT (identified by phone), not the chat.
+export async function linkContactByPhone({ contact, phone, name, email }) {
+  const clean = String(phone || '').replace(/[^\d+]/g, '')
+  if (!ghlEnabled()) return { linked: false, reason: 'not_connected', instruction: 'Booking system not connected — take their phone and say the team will confirm.' }
+  if (clean.length < 7) return { linked: false, reason: 'bad_phone', instruction: 'That phone number looks incomplete — politely ask them to re-send it.' }
+  try {
+    // Upsert by phone → GHL returns the EXISTING contact if this phone already has
+    // one (so a form/deposit already on that contact comes back with its tags).
+    const ghlContact = await upsertContact({ firstName: name, phone: clean, email, tags: ['hot new lead'] })
+    const id = ghlContact?.id
+    let tags = ghlContact?.tags || []
+    if (id) tags = await getContactTags(id) // authoritative current tag list
+
+    if (contact?.id && id) {
+      await updateContact(contact.id, { ghl_contact_id: id, phone: clean }).catch(() => {})
+    }
+
+    const has = (needle) => tags.some((t) => String(t).toLowerCase().includes(needle))
+    const formSubmitted = has('form')
+    const depositPaid = has('deposit') && (has('success') || has('received') || has('paid'))
+    const failed = has('payment_failed') || (has('payment') && has('fail'))
+
+    let instruction
+    if (depositPaid) instruction = 'Their $50 deposit IS confirmed — they are BOOKED. Congratulate them warmly and confirm the appointment.'
+    else if (formSubmitted) instruction = 'Their Skin Evaluation form IS received, but NO deposit yet. Thank them, and let them know they are booked once the $50 deposit is in (it goes toward their session).'
+    else if (failed) instruction = 'A payment attempt failed. Warmly offer to re-send the form / an e-transfer option.'
+    else instruction = 'No form or deposit is showing on this number yet. It can take a few minutes to register — reassure them, ask them to confirm they used THIS number in the form, and say our team will confirm shortly. Do NOT claim they are booked.'
+
+    return { linked: Boolean(id), phone: clean, name: ghlContact?.firstName || name || null, tags, formSubmitted, depositPaid, instruction }
+  } catch (e) {
+    console.warn('linkContactByPhone failed:', e.message)
+    return { linked: false, reason: 'error', instruction: 'Could not connect right now — take their phone and say the team will confirm shortly.' }
   }
 }
 

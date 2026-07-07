@@ -4,7 +4,7 @@ import { buildSystemPrompt } from '../lib/prompts.js'
 import { searchKnowledge } from './knowledge.service.js'
 import { getContact, findOrCreateContact } from './contacts.service.js'
 import { extractAndSave } from './extraction.service.js'
-import { checkAvailability } from './booking.service.js'
+import { checkAvailability, linkContactByPhone } from './booking.service.js'
 import { ghlEnabled, getContactTags } from './ghl.service.js'
 import {
   getConversation,
@@ -23,11 +23,16 @@ const TOOLS = [
     function: {
       name: 'check_availability',
       description:
-        'Get REAL open appointment slots from the live calendar. Call this whenever the client wants to book or asks about availability/times, once you know the service (facial or wax). Never invent slots — always use this.',
+        'Get REAL open appointment slots from the live calendar. Call this ONLY after you have CONFIRMED exactly what the client is having (facial, wax, or both combined) so the slot fits the full visit length. Never invent slots — always use this.',
       parameters: {
         type: 'object',
         properties: {
-          service: { type: 'string', enum: ['facial', 'wax'], description: 'facial or wax' },
+          service: {
+            type: 'string',
+            enum: ['facial', 'wax', 'facial_wax'],
+            description:
+              'What they are booking: "facial" (60 min), "wax" (30 min), or "facial_wax" for a facial + wax combined back-to-back (90 min total). Confirm with the client which one before calling.',
+          },
           date: {
             type: 'string',
             description:
@@ -35,6 +40,26 @@ const TOOLS = [
           },
         },
         required: ['service'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'link_contact',
+      description:
+        "Connect this chat to the customer's GoHighLevel record using their phone number, and read back their live booking status (form submitted / deposit paid). Call this in TWO cases: (1) when you collect their phone right BEFORE sending the booking form, and (2) when they say they already filled the form or paid but you have no record of it in this chat — ask for the phone number they used in the form and pass it here so GHL can connect them.",
+      parameters: {
+        type: 'object',
+        properties: {
+          phone: {
+            type: 'string',
+            description: 'The phone number they will use / used in the form — ideally their WhatsApp number.',
+          },
+          name: { type: 'string', description: 'Their name, if known.' },
+          email: { type: 'string', description: 'Their email, if known.' },
+        },
+        required: ['phone'],
       },
     },
   },
@@ -48,8 +73,10 @@ function safeJson(s) {
   }
 }
 
-async function runTool(name, args) {
+async function runTool(name, args, ctx = {}) {
   if (name === 'check_availability') return checkAvailability(args)
+  if (name === 'link_contact')
+    return linkContactByPhone({ contact: ctx.contact, phone: args.phone, name: args.name, email: args.email })
   return { error: 'unknown_tool' }
 }
 
@@ -110,7 +137,7 @@ export async function handleChat(args) {
     for (let round = 0; round < 2 && msg?.tool_calls?.length; round++) {
       const toolMsgs = []
       for (const tc of msg.tool_calls) {
-        const result = await runTool(tc.function.name, safeJson(tc.function.arguments))
+        const result = await runTool(tc.function.name, safeJson(tc.function.arguments), { contact: prep.contact, conversationId: prep.conversationId })
         toolMsgs.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(result) })
       }
       messages = [...messages, msg, ...toolMsgs]
@@ -179,7 +206,7 @@ export async function* streamChat(args) {
       // Execute tools, append results, loop to stream the follow-up answer.
       const toolMsgs = []
       for (const tc of toolCalls) {
-        const result = await runTool(tc.function.name, safeJson(tc.function.arguments))
+        const result = await runTool(tc.function.name, safeJson(tc.function.arguments), { contact: prep.contact, conversationId: prep.conversationId })
         toolMsgs.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(result) })
       }
       messages = [...messages, { role: 'assistant', content: full || null, tool_calls: toolCalls }, ...toolMsgs]

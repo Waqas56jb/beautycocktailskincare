@@ -177,4 +177,20 @@ export async function deleteContact(contactId) {
   return ghlFetch(`/contacts/${contactId}`, { method: 'DELETE' })
 }
 
+// ── SMS (LC Phone / Twilio via GHL) ──────────────────────────────────────────
+// Send an SMS to a contact through GHL's conversations API. Requires the GHL
+// location to have a phone number provisioned (LC Phone or Twilio). Best-effort.
+export async function sendSms({ contactId, message }) {
+  if (!ghlEnabled() || !contactId || !message) return { skipped: true }
+  try {
+    return await ghlFetch('/conversations/messages', {
+      method: 'POST',
+      body: { type: 'SMS', contactId, message },
+    })
+  } catch (e) {
+    console.error('sendSms failed:', e.status, e.message)
+    return { error: e.message, status: e.status }
+  }
+}
+
 export const CALENDARS = calendars

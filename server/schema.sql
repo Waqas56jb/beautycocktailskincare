@@ -83,7 +83,7 @@ create table if not exists conversations (
   id              uuid primary key default gen_random_uuid(),
   contact_id      uuid references contacts(id) on delete set null,
   channel         text not null default 'website'
-                    check (channel in ('website','instagram','whatsapp','facebook')),
+                    check (channel in ('website','instagram','whatsapp','facebook','sms')),
   status          text not null default 'open'
                     check (status in ('open','closed','needs_human')),
   assigned_to     uuid,                 -- staff auth.users id, when a human takes over
