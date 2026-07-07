@@ -31,6 +31,21 @@ function dateLabel(dayStr) {
   return `${wd}, ${MONTHS[m - 1]} ${d}`
 }
 
+// Pacific today / tomorrow as YYYY-MM-DD, so the bot can resolve "today/tomorrow"
+// without computing dates itself.
+function pacificDayRefs() {
+  const todayStr = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Vancouver',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date())
+  const [y, m, d] = todayStr.split('-').map(Number)
+  const tmw = new Date(Date.UTC(y, m - 1, d + 1))
+  const tomorrowStr = `${tmw.getUTCFullYear()}-${String(tmw.getUTCMonth() + 1).padStart(2, '0')}-${String(tmw.getUTCDate()).padStart(2, '0')}`
+  return { todayStr, tomorrowStr }
+}
+
 // Tool the model calls to get REAL open slots, clustered from noon.
 export async function checkAvailability({ service = 'facial' } = {}) {
   const cal = service === 'wax' ? CALENDARS.wax : CALENDARS.facial
@@ -39,19 +54,39 @@ export async function checkAvailability({ service = 'facial' } = {}) {
     const now = Date.now()
     const end = now + 14 * 864e5
     const slotsByDay = await getFreeSlots(cal, now, end)
-    const clustered = clusterSlots(slotsByDay, 12) // ordered best-first (no-gap clustering)
-    // Ordered options, best (most clustered) first. Each carries an exact FULL
-    // date label so the bot never computes/relative-labels dates itself.
-    const options = clustered.map((iso) => {
+    const clustered = clusterSlots(slotsByDay, 40) // ordered best-first (no-gap clustering)
+    const { todayStr, tomorrowStr } = pacificDayRefs()
+
+    // Group the clustered slots by day (clustered order preserved within each day)
+    const byDay = new Map()
+    for (const iso of clustered) {
       const { day, label } = fmtTime(iso)
-      return { dateLabel: dateLabel(day), time: label, iso }
+      if (!byDay.has(day)) byDay.set(day, [])
+      byDay.get(day).push(label)
+    }
+    const days = [...byDay.entries()].map(([date, times]) => ({
+      date,
+      dateLabel: dateLabel(date),
+      isToday: date === todayStr,
+      isTomorrow: date === tomorrowStr,
+      times: times.slice(0, 3), // top clustered times that day
+    }))
+
+    // Flat best-first list (for generic "earliest" asks)
+    const options = clustered.slice(0, 12).map((iso) => {
+      const { day, label } = fmtTime(iso)
+      return { dateLabel: dateLabel(day), time: label }
     })
+
     return {
-      available: options.length > 0,
+      available: days.length > 0,
       service,
+      todayDate: dateLabel(todayStr), // e.g. "Tuesday, July 8"
+      tomorrowDate: dateLabel(tomorrowStr), // e.g. "Wednesday, July 9"
+      days, // availability per day (with isToday/isTomorrow flags)
       options,
       instruction:
-        'Present slots using each option\'s EXACT `dateLabel` verbatim (e.g. "Wednesday, July 9 at 1:00 PM"). NEVER add or compute "today"/"tomorrow" yourself — only the full date. Offer ONLY the first 1–2 options; if declined, offer the next 1–2. Never list them all at once.',
+        'Answer the client DIRECTLY — do NOT keep asking them for dates. `todayDate`/`tomorrowDate` are the exact dates; use `days` (each has isToday/isTomorrow) to answer any "today/tomorrow/specific day" question. If the asked day is in `days`, offer its first 1–2 times. If it is NOT in `days`, tell them that day has no openings and offer the nearest 1–2 from `options`. Always use the full `dateLabel` (never write "today/tomorrow" yourself).',
     }
   } catch (e) {
     console.warn('checkAvailability failed:', e.message)
