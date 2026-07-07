@@ -100,11 +100,13 @@ export async function checkAvailability({ service = 'facial', date } = {}) {
     const now = Date.now()
     const end = now + 14 * 864e5
     const [slotsByDay, appts] = await Promise.all([getFreeSlots(cal, now, end), getAppointments(cal, now, end)])
-    let clustered = clusterSlots(slotsByDay, 60) // ordered best-first (no-gap clustering)
+    const serviceMins = SERVICE_MINUTES[service] || 60
+    // Cluster off REAL bookings + service duration (back-to-back slots first).
+    let clustered = clusterSlots(slotsByDay, appts, serviceMins, 60)
     // Enforce max 3 consecutive bookings — drop any slot that would create a 4th.
     clustered = clustered.filter((iso) => {
       const s = new Date(iso).getTime()
-      return consecutiveIfBooked(s, s + 60 * 60000, appts) <= 3
+      return consecutiveIfBooked(s, s + serviceMins * 60000, appts) <= 3
     })
     const { todayStr, tomorrowStr } = pacificDayRefs()
 

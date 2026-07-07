@@ -45,13 +45,15 @@ export async function getFreeSlots(calendarId, startMs, endMs) {
   return out
 }
 
-// Owner's clustering rule: fill the day with NO gaps. Works purely from GHL's
-// real free slots (which already reflect staff availability + bookings + calendar
-// rules) — no hardcoded time grid. A "gap" (a jump between consecutive free slots
-// bigger than the normal step) means a booking sits there, so the free slots on
-// either EDGE of that gap are preferred (cluster next to bookings). On a fully-open
-// day (no gaps) we anchor at 12pm. Returns a flat ISO list, best-first, earliest
-// day first — the bot offers the top 1–2 and works down.
+// Owner's clustering rule (cluster-booking / business optimization). GHL free
+// slots are the SOURCE OF TRUTH (they already respect staff hours, breaks and
+// existing bookings). On top of that we ORDER the free slots so the ones that sit
+// back-to-back against an EXISTING booking come first — grouping appointments,
+// leaving no small gaps. We use the REAL bookings (from getAppointments) plus the
+// service duration, so a booking at the very start OR end of the day is handled
+// correctly (e.g. only 5:30 & 6:30 booked, 1-hr facial → offer 4:30 first, since
+// 4:30 + 1hr = 5:30 = the booking). On a fully-open day we anchor near noon.
+// Returns a flat ISO list, best-first, earliest day first.
 const NOON = 12 * 60
 
 function minsOfIso(iso) {
@@ -59,37 +61,50 @@ function minsOfIso(iso) {
   return m ? Number(m[1]) * 60 + Number(m[2]) : 0
 }
 
-export function clusterSlots(slotsByDay, limit = 40) {
+// Group flat appointments ([{start,end} epoch ms]) by their studio-local day.
+function apptsByPacificDay(appts = [], timezone) {
+  const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit' })
+  const out = {}
+  for (const a of appts) {
+    const day = fmt.format(new Date(a.start))
+    ;(out[day] ||= []).push(a)
+  }
+  return out
+}
+
+export function clusterSlots(slotsByDay, appts = [], serviceMins = 60, limit = 60) {
   const ordered = []
+  const durMs = serviceMins * 60000
+  const byDay = apptsByPacificDay(appts, timezone)
   const days = Object.keys(slotsByDay).sort()
   for (const day of days) {
-    const pairs = (slotsByDay[day] || [])
-      .map((iso) => ({ iso, mins: minsOfIso(iso) }))
+    const slots = (slotsByDay[day] || [])
+      .map((iso) => ({ iso, mins: minsOfIso(iso), t: new Date(iso).getTime() }))
+      .filter((s) => s.t)
       .sort((a, b) => a.mins - b.mins)
-    if (!pairs.length) continue
+    if (!slots.length) continue
 
-    const mins = pairs.map((p) => p.mins)
-    // Normal step between adjacent free slots (smallest consecutive gap).
-    let step = 60
-    if (mins.length > 1) {
-      let mn = Infinity
-      for (let i = 1; i < mins.length; i++) mn = Math.min(mn, mins[i] - mins[i - 1])
-      step = mn
+    const dayAppts = byDay[day] || []
+    if (dayAppts.length) {
+      // Score by relation to real bookings: a slot that ends exactly when a
+      // booking starts, or starts exactly when a booking ends, is BACK-TO-BACK
+      // (best). Otherwise rank by how close it sits to the nearest booking edge.
+      for (const s of slots) {
+        const candEnd = s.t + durMs
+        const adjacent = dayAppts.some((a) => a.start === candEnd || a.end === s.t)
+        let dist = Infinity
+        for (const a of dayAppts) {
+          dist = Math.min(dist, Math.abs(a.start - candEnd), Math.abs(a.end - s.t))
+        }
+        s.adjacent = adjacent
+        s.dist = dist
+      }
+      slots.sort((a, b) => (a.adjacent === b.adjacent ? a.dist - b.dist || a.mins - b.mins : a.adjacent ? -1 : 1))
+    } else {
+      // No bookings that day → anchor near noon (earliest-clustered feel).
+      slots.sort((a, b) => Math.abs(a.mins - NOON) - Math.abs(b.mins - NOON) || a.mins - b.mins)
     }
-    // Slots sitting right next to a booked GAP (a jump > step between free slots) —
-    // day boundaries (first/last) don't count as bookings.
-    const nearGap = new Set()
-    for (let i = 0; i < pairs.length; i++) {
-      const prevGap = i > 0 && mins[i] - mins[i - 1] > step
-      const nextGap = i < pairs.length - 1 && mins[i + 1] - mins[i] > step
-      if (prevGap || nextGap) nearGap.add(pairs[i].mins)
-    }
-    for (const p of pairs) {
-      const base = nearGap.has(p.mins) ? 0 : nearGap.size > 0 ? 100000 : 0
-      p.score = base + Math.abs(p.mins - NOON) // gap-adjacent first, then noon-ward
-    }
-    pairs.sort((a, b) => a.score - b.score || a.mins - b.mins)
-    for (const p of pairs) ordered.push(p.iso)
+    for (const s of slots) ordered.push(s.iso)
   }
   return ordered.slice(0, limit)
 }
