@@ -28,6 +28,11 @@ const TOOLS = [
         type: 'object',
         properties: {
           service: { type: 'string', enum: ['facial', 'wax'], description: 'facial or wax' },
+          date: {
+            type: 'string',
+            description:
+              'OPTIONAL. If the client named a specific day, pass it as YYYY-MM-DD (e.g. "2026-07-12"), or the literal "today"/"tomorrow". This returns a focused answer for that day in `requested`. Omit if they have not named a day yet.',
+          },
         },
         required: ['service'],
       },

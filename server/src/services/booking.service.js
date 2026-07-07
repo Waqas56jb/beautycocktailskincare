@@ -1,12 +1,36 @@
 import {
   ghlEnabled,
   getFreeSlots,
+  getAppointments,
   clusterSlots,
   upsertContact,
   addNote,
   createAppointment,
   CALENDARS,
 } from './ghl.service.js'
+
+// How many appointments would be back-to-back if `[candStart, candEnd]` is booked?
+// (Existing appts whose end === a start chain together.) Owner rule: max 3.
+function consecutiveIfBooked(candStart, candEnd, appts) {
+  let count = 1
+  let curStart = candStart
+  let changed = true
+  while (changed) {
+    changed = false
+    for (const a of appts) {
+      if (a.end === curStart) { count++; curStart = a.start; changed = true; break }
+    }
+  }
+  let curEnd = candEnd
+  changed = true
+  while (changed) {
+    changed = false
+    for (const a of appts) {
+      if (a.start === curEnd) { count++; curEnd = a.end; changed = true; break }
+    }
+  }
+  return count
+}
 
 const SERVICE_MINUTES = { facial: 60, wax: 30 }
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -46,15 +70,42 @@ function pacificDayRefs() {
   return { todayStr, tomorrowStr }
 }
 
+// Normalize a model-supplied date (YYYY-MM-DD, 'today', 'tomorrow', or a natural
+// date like "July 12") to a YYYY-MM-DD string, or null if unparseable.
+function normalizeDate(date, todayStr, tomorrowStr) {
+  if (!date) return null
+  const s = String(date).trim()
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s
+  if (/today/i.test(s)) return todayStr
+  if (/tomorrow/i.test(s)) return tomorrowStr
+  const m = s.match(/([A-Za-z]+)\s+(\d{1,2})/) // "July 12" / "12 July" handled loosely
+  const monthIdx = MONTHS.findIndex((mo) => new RegExp(mo, 'i').test(s))
+  if (monthIdx >= 0) {
+    const dayNum = m ? Number(m[2].length && /^\d/.test(m[2]) ? m[2] : m[1]) : Number((s.match(/\d{1,2}/) || [])[0])
+    if (dayNum) {
+      const year = Number(todayStr.slice(0, 4))
+      return `${year}-${String(monthIdx + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`
+    }
+  }
+  return null
+}
+
 // Tool the model calls to get REAL open slots, clustered from noon.
-export async function checkAvailability({ service = 'facial' } = {}) {
+// `date` (optional) focuses the answer on one day so the model doesn't have to
+// scan the whole list (which caused hallucinated / wrong "fully booked" replies).
+export async function checkAvailability({ service = 'facial', date } = {}) {
   const cal = service === 'wax' ? CALENDARS.wax : CALENDARS.facial
   if (!ghlEnabled() || !cal) return { available: false, reason: 'calendar_not_connected' }
   try {
     const now = Date.now()
     const end = now + 14 * 864e5
-    const slotsByDay = await getFreeSlots(cal, now, end)
-    const clustered = clusterSlots(slotsByDay, 40) // ordered best-first (no-gap clustering)
+    const [slotsByDay, appts] = await Promise.all([getFreeSlots(cal, now, end), getAppointments(cal, now, end)])
+    let clustered = clusterSlots(slotsByDay, 60) // ordered best-first (no-gap clustering)
+    // Enforce max 3 consecutive bookings — drop any slot that would create a 4th.
+    clustered = clustered.filter((iso) => {
+      const s = new Date(iso).getTime()
+      return consecutiveIfBooked(s, s + 60 * 60000, appts) <= 3
+    })
     const { todayStr, tomorrowStr } = pacificDayRefs()
 
     // Group the clustered slots by day (clustered order preserved within each day)
@@ -78,7 +129,7 @@ export async function checkAvailability({ service = 'facial' } = {}) {
       return { dateLabel: dateLabel(day), time: label }
     })
 
-    return {
+    const result = {
       available: days.length > 0,
       service,
       todayDate: dateLabel(todayStr), // e.g. "Tuesday, July 8"
@@ -86,8 +137,25 @@ export async function checkAvailability({ service = 'facial' } = {}) {
       days, // availability per day (with isToday/isTomorrow flags)
       options,
       instruction:
-        'Answer the client DIRECTLY — do NOT keep asking them for dates. `todayDate`/`tomorrowDate` are the exact dates; use `days` (each has isToday/isTomorrow) to answer any "today/tomorrow/specific day" question. If the asked day is in `days`, offer its first 1–2 times. If it is NOT in `days`, tell them that day has no openings and offer the nearest 1–2 from `options`. Always use the full `dateLabel` (never write "today/tomorrow" yourself).',
+        'Answer DIRECTLY — never keep asking for dates. EVERY date listed in `days` is OPEN: its `times` are real bookable slots, already ordered best-first — offer the first 1–3 of them (do not reorder, do not dump all). To answer a specific-day question, find that date in `days` and offer its times (filter to the rough time they asked for, e.g. afternoon = 12pm+, if they gave one). A date is unavailable ONLY if it does NOT appear in `days` at all — then say that exact date is fully booked and offer the nearest date from `days`. **NEVER say a date is booked/unavailable if it appears in `days`** (that is a contradiction — do not do it). `todayDate`/`tomorrowDate` are the exact dates for "today"/"tomorrow". Always use the full `dateLabel` verbatim; never write "today/tomorrow" yourself. **Offer ONLY the exact times listed — never invent a time that is not in the data.**',
     }
+
+    // Focused single-day answer when the client named a specific day.
+    const target = normalizeDate(date, todayStr, tomorrowStr)
+    if (target) {
+      const match = days.find((d) => d.date === target)
+      const label = /^\d{4}-\d{2}-\d{2}$/.test(target) ? dateLabel(target) : target
+      if (match) {
+        result.requested = { date: target, dateLabel: label, available: true, times: match.times }
+        result.instruction = `The client asked about ${label}. It IS OPEN at these exact times (best-first): ${match.times.join(', ')}. Offer the first 1–3 (if they gave a rough time like "afternoon", offer the ones that fit but never claim it's the "only" time if others are listed). Use "${label}" verbatim. Do NOT say it is booked. Never invent a time not in this list.`
+      } else {
+        const alt = options.slice(0, 3).map((o) => `${o.dateLabel} ${o.time}`).join('; ')
+        result.requested = { date: target, dateLabel: label, available: false }
+        result.instruction = `The client asked about ${label}. It has NO open slots — say that exact date (${label}) is fully booked, then offer the nearest real options: ${alt}. Never invent a time.`
+      }
+    }
+
+    return result
   } catch (e) {
     console.warn('checkAvailability failed:', e.message)
     return { available: false, reason: 'error' }

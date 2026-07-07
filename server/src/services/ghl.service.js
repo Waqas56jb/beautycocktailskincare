@@ -143,6 +143,21 @@ export async function deleteAppointment(eventId) {
   return ghlFetch(`/calendars/events/${eventId}`, { method: 'DELETE' })
 }
 
+// Existing booked appointments (start/end epoch ms) — used to enforce the
+// "max 3 consecutive bookings" rule.
+export async function getAppointments(calendarId, startMs, endMs) {
+  try {
+    const data = await ghlFetch('/calendars/events', {
+      query: { locationId, calendarId, startTime: startMs, endTime: endMs },
+    })
+    return (data.events || [])
+      .map((e) => ({ start: new Date(e.startTime).getTime(), end: new Date(e.endTime).getTime() }))
+      .filter((e) => e.start && e.end)
+  } catch {
+    return []
+  }
+}
+
 export async function deleteContact(contactId) {
   return ghlFetch(`/contacts/${contactId}`, { method: 'DELETE' })
 }
