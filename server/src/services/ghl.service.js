@@ -83,6 +83,22 @@ export async function addTags(contactId, tags = []) {
   return ghlFetch(`/contacts/${contactId}/tags`, { method: 'POST', body: { tags } })
 }
 
+export async function removeTags(contactId, tags = []) {
+  if (!tags.length) return
+  return ghlFetch(`/contacts/${contactId}/tags`, { method: 'DELETE', body: { tags } })
+}
+
+// Read the contact's current GHL tags (so the bot knows their journey state:
+// active_package, payment_failed_1/2, payment_deposit_success, client, etc.).
+export async function getContactTags(contactId) {
+  try {
+    const data = await ghlFetch(`/contacts/${contactId}`)
+    return data.contact?.tags || []
+  } catch {
+    return []
+  }
+}
+
 export async function addNote(contactId, noteBody) {
   return ghlFetch(`/contacts/${contactId}/notes`, { method: 'POST', body: { body: noteBody } })
 }

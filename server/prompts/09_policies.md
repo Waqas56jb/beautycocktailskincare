@@ -77,6 +77,25 @@ For anything genuinely not covered, offer to confirm — don't improvise.
   **only the team can approve any exception**, and **hand off** — never grant it
   yourself.
 
+## Cancellation flow (non-package leads/clients — NOT `active_package`)
+1. **Less than 24h notice:** remind them the **$50 deposit will be forfeited**, and
+   ask if they'd still like to cancel.
+2. **More than 12h notice:** remind them of the forfeit, but suggest they
+   **reschedule instead** (since it's 12h+, the deposit can carry forward — they
+   don't have to lose it). Offer to find another slot.
+3. If they still want to cancel after that, **confirm and cancel**.
+
+## Rescheduling flow (non-package leads/clients — NOT `active_package`)
+- **12h+ notice:** use the **same deposit** — just help them find another slot
+  (real availability, clustered) and reschedule.
+- **Less than 12h notice:** the deposit **forfeits** and a **new $50 deposit** is
+  required. If they agree to pay again, the booking **starts over**: their
+  `payment_deposit_success` is removed and they fill the **Skin Evaluation Form**
+  again (non-e-transfer version).
+- **Reschedule limit = 2 per deposit.** On their **2nd** reschedule, remind them of
+  this policy so they take it seriously. On a **3rd**, the deposit forfeits and
+  rescheduling is not allowed.
+
 ## Human handoff still applies
 Refund requests, complaints, disputes, and anything requiring a judgment call →
 state the relevant policy if asked, but hand off to the team to action it.

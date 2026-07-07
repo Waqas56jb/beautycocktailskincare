@@ -5,7 +5,7 @@ import { searchKnowledge } from './knowledge.service.js'
 import { getContact, findOrCreateContact } from './contacts.service.js'
 import { extractAndSave } from './extraction.service.js'
 import { checkAvailability } from './booking.service.js'
-import { ghlEnabled } from './ghl.service.js'
+import { ghlEnabled, getContactTags } from './ghl.service.js'
 import {
   getConversation,
   createConversation,
@@ -73,12 +73,14 @@ async function prepareTurn({ conversationId, text, visitor = {}, channel = 'webs
 
   await addMessage(conversation.id, 'user', message)
 
-  const [history, knowledge] = await Promise.all([
+  const [history, knowledge, ghlTags] = await Promise.all([
     getRecentMessages(conversation.id, config.chat.historyLimit), // last N-message memory
     searchKnowledge(message),
+    // Live GHL journey tags (active_package, payment_failed_1/2, deposit_success…)
+    contact?.ghl_contact_id && ghlEnabled() ? getContactTags(contact.ghl_contact_id) : Promise.resolve([]),
   ])
 
-  const system = buildSystemPrompt({ contact, knowledge, channel })
+  const system = buildSystemPrompt({ contact, knowledge, channel, ghlTags })
   return { conversationId: conversation.id, contact, messages: toOpenAIMessages(system, history) }
 }
 

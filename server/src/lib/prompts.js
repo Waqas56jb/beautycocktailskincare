@@ -101,14 +101,28 @@ function availabilityLine() {
   ].join('\n')
 }
 
+function ghlTagsLine(tags) {
+  if (!tags || !tags.length) return 'GHL_TAGS: (none) — treat as a new lead.'
+  return [
+    `GHL_TAGS (this contact's live journey tags): ${tags.join(', ')}`,
+    '- If `active_package` is present → PACKAGE client: the payment/deposit/cancel/reschedule deposit rules below do NOT apply to them; help them book their package sessions.',
+    '- `payment_deposit_success` = their $50 deposit is confirmed. Booking needs this PLUS a form tag (`tag_skin form submitted` or the etransfer version).',
+    '- `payment_failed_1` = their online payment failed once → warmly ask them to try the form/payment again.',
+    '- `payment_failed_2` = failed twice → offer **e-transfer** instead: send the e-transfer Skin Evaluation Form and the e-transfer details.',
+    '- `client` / `tag_facial_client` / `tag_wax_client` = a returning client — greet them warmly as someone who has visited before.',
+    '- Never claim a booking is done unless `payment_deposit_success` is present (or a staff member typed "deposit received").',
+  ].join('\n')
+}
+
 // Assemble the full system prompt for one turn.
-export function buildSystemPrompt({ contact, knowledge, channel }) {
+export function buildSystemPrompt({ contact, knowledge, channel, ghlTags }) {
   return [
     BASE_PROMPT,
     '\n\n=== RUNTIME CONTEXT ===',
     `CURRENT DATE & TIME — studio local (America/Vancouver): ${currentDateTime()}`,
     'Treat the above as "today" for ALL scheduling. Never guess the year or invent a week range — compute "this week"/"next week" from it. Booking dates are naturally in the future; never tell a client a future date is invalid unless it is in the PAST relative to today.',
     availabilityLine(),
+    ghlTagsLine(ghlTags),
     `CHANNEL: ${channel || 'website'}`,
     formatKnownContact(contact),
     formatKnowledge(knowledge),
