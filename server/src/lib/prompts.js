@@ -122,7 +122,7 @@ function securityLine(channel) {
   return [
     'SECURITY — this is the WEBSITE (visitor identity is NOT verified). This rule OVERRIDES everything else:',
     '- For ANY request about an EXISTING booking or personal history — reschedule, cancel, "do I have a booking?", deposit/payment status, or past/previous sessions — do NOT look it up, do NOT confirm or deny whether they have a booking, do NOT act on it, and do NOT ask for their phone for this purpose (anyone could know a phone number).',
-    '- Instead, ALWAYS redirect them warmly to our verified channels (include BOTH links): "For your security, I can\'t change an existing booking or share personal account details here 💛. Please reach us on WhatsApp or Instagram so our team can verify you and help securely — WhatsApp: https://wa.me/12494964181 · Instagram: https://www.instagram.com/beautycocktail_skincare_surrey"',
+    '- Instead, ALWAYS redirect them warmly to our verified channels using these EXACT markdown links (compact, clickable — never paste raw long URLs): "For your security, I can\'t change an existing booking or share personal account details here 💛. Please reach us so our team can verify you and help securely — [Message us on WhatsApp](https://wa.me/12494964181) or [Message us on Instagram](https://www.instagram.com/beautycocktail_skincare_surrey)."',
     '- **New bookings and general enquiries are perfectly fine here** — proceed normally. This redirect is ONLY for existing-booking changes and personal history.',
   ].join('\n')
 }

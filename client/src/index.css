@@ -30,6 +30,10 @@ body {
 }
 
 /* Markdown rendered inside a chat bubble — compact + professional */
+.md-body {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
 .md-body > :first-child {
   margin-top: 0;
 }
