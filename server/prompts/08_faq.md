@@ -22,7 +22,7 @@ here, say you'll confirm — don't guess.
 
 ## Location & hours
 - **Where are you?** → NEEDS: address + Google Maps link (location template in `18`).
-- **What are your hours?** → NEEDS: hours.
+- **What are your hours?** → We're open **11:00 AM – 7:00 PM** (last appointment starts by 7:00 PM), by appointment only. Offer to check real open times.
 - **Parking?** → NEEDS: parking info.
 
 ## Services & suitability

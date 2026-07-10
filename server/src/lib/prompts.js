@@ -6,6 +6,10 @@ import { config } from '../config/env.js'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const PROMPTS_DIR = join(__dirname, '..', '..', 'prompts')
 
+// Studio hours (from the GHL calendar config: open 11:00, close 19:00, daily).
+// Stated to clients when they ask for an out-of-hours time.
+const BUSINESS_HOURS = '11:00 AM–7:00 PM'
+
 // Load behaviour modules 01..19 in order (skip 00 index and 20 examples at
 // runtime to save tokens). Cached at boot; restart the server to pick up edits.
 function loadModules() {
@@ -92,6 +96,7 @@ function availabilityLine() {
   }
   return [
     'AVAILABILITY & BOOKING (live calendar via `check_availability` tool):',
+    `- **BUSINESS HOURS: ${BUSINESS_HOURS}.** The last appointment starts by 7:00 PM. If a client asks for a time OUTSIDE these hours (e.g. 10:00 AM, 8:00 PM, 9 PM, or anything before 11 AM / after 7 PM), do NOT just say "not available" or jump to the "closest slot" — FIRST tell them our hours, e.g. *"We're open ${BUSINESS_HOURS} 💛"*, THEN offer the nearest in-hours time. Never imply we might open earlier/later than this.`,
     '- To answer ANY availability/time/booking question you MUST call `check_availability`. NEVER say "one moment"/"let me check" without calling it.',
     '- **CONFIRM THE SERVICE(S) FIRST — before checking any slot.** Find out exactly what they want: a **facial** (60 min), a **wax** (30 min), or **both combined** (facial + wax back-to-back, 90 min). If they mention more than one service, confirm whether they want them in the same visit (combined) so the whole visit fits one slot. Pass the right `service` to the tool: `facial`, `wax`, or `facial_wax`. Only check availability once the service is settled — the slot must fit the FULL visit length (`totalMinutes`).',
     '- **Booking flow:** (1) confirm the service(s) and total time; (2) ask their **preferred date(s)** and a **rough time** (morning/afternoon/evening or an approx time) — unless already given; (3) check availability; (4) offer the best clustered slot.',

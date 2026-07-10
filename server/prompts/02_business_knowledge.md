@@ -20,7 +20,7 @@ NEEDS: mission statement, vision, and 3–5 brand values in the owner's words.
 - **Google Maps / directions link:** https://share.google/bB4Qfq9SDT3rb1XYZ
   (share via the exact location template in `18` — always note **By Appointments only**)
 - **Appointment-only:** yes — advance booking required; walk-ins subject to availability.
-- **Business hours:** NEEDS: day-by-day hours (not yet provided)
+- **Business hours:** 11:00 AM – 7:00 PM (last appointment starts by 7:00 PM). By appointment only — always offer real open slots via the calendar.
 - **Parking / directions:** NEEDS: if any specific notes
 
 ## Contact
