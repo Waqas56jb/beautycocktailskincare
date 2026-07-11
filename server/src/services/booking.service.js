@@ -97,13 +97,25 @@ function normalizeDate(date, todayStr, tomorrowStr) {
       return `${year}-${String(monthIdx + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`
     }
   }
+  // Weekday name ("Saturday", "this Monday", "next Friday") → next occurrence.
+  // Resolved here (not by the model, which miscomputes weekdays).
+  const wdIdx = WEEKDAYS.findIndex((w) => new RegExp(`\\b${w}\\b`, 'i').test(s))
+  if (wdIdx >= 0) {
+    const [y, mo, d] = todayStr.split('-').map(Number)
+    const cur = new Date(Date.UTC(y, mo - 1, d)).getUTCDay()
+    let delta = (wdIdx - cur + 7) % 7
+    if (delta === 0) delta = 7 // today's weekday named → mean next week (future booking)
+    if (/\bnext\b/i.test(s) && delta < 7) delta += 7 // "next Friday" = the following week
+    const dat = new Date(Date.UTC(y, mo - 1, d + delta))
+    return `${dat.getUTCFullYear()}-${String(dat.getUTCMonth() + 1).padStart(2, '0')}-${String(dat.getUTCDate()).padStart(2, '0')}`
+  }
   return null
 }
 
 // Tool the model calls to get REAL open slots, clustered from noon.
 // `date` (optional) focuses the answer on one day so the model doesn't have to
 // scan the whole list (which caused hallucinated / wrong "fully booked" replies).
-export async function checkAvailability({ service = 'facial', date } = {}) {
+export async function checkAvailability({ service = 'facial', date, userText } = {}) {
   // facial_wax (combo) and facial both anchor on the facial calendar; only wax-only
   // uses the wax calendar. The TOTAL duration drives which slot fits + clustering.
   const cal = service === 'wax' ? CALENDARS.wax : CALENDARS.facial
@@ -155,8 +167,10 @@ export async function checkAvailability({ service = 'facial', date } = {}) {
         'Answer DIRECTLY — never keep asking for dates. EVERY date listed in `days` is OPEN: its `times` are real bookable slots, already ordered best-first — offer the first 1–3 of them (do not reorder, do not dump all). To answer a specific-day question, find that date in `days` and offer its times (filter to the rough time they asked for, e.g. afternoon = 12pm+, if they gave one). A date is unavailable ONLY if it does NOT appear in `days` at all — then say that exact date is fully booked and offer the nearest date from `days`. **NEVER say a date is booked/unavailable if it appears in `days`** (that is a contradiction — do not do it). `todayDate`/`tomorrowDate` are the exact dates for "today"/"tomorrow". Always use the full `dateLabel` verbatim; never write "today/tomorrow" yourself. **Offer ONLY the exact times listed — never invent a time that is not in the data.**',
     }
 
-    // Focused single-day answer when the client named a specific day.
-    const target = normalizeDate(date, todayStr, tomorrowStr)
+    // Focused single-day answer when the client named a specific day. Resolve from
+    // what the CLIENT actually typed first (weekdays/relative dates the model
+    // miscomputes), then fall back to the model-supplied `date`.
+    const target = normalizeDate(userText, todayStr, tomorrowStr) || normalizeDate(date, todayStr, tomorrowStr)
     if (target) {
       const match = days.find((d) => d.date === target)
       const label = /^\d{4}-\d{2}-\d{2}$/.test(target) ? dateLabel(target) : target

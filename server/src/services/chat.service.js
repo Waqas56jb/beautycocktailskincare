@@ -36,7 +36,7 @@ const TOOLS = [
           date: {
             type: 'string',
             description:
-              'OPTIONAL. If the client named a specific day, pass it as YYYY-MM-DD (e.g. "2026-07-12"), or the literal "today"/"tomorrow". This returns a focused answer for that day in `requested`. Omit if they have not named a day yet.',
+              'OPTIONAL — pass whenever the client named ANY day. For relative/weekday references, pass the PHRASE VERBATIM and let the system resolve it (do NOT compute the date yourself — you miscount): use "today", "tomorrow", "day after tomorrow", or a weekday like "Saturday"/"next Monday". ONLY for an explicit numeric date (e.g. "the 14th", "July 16") pass YYYY-MM-DD (e.g. "2026-07-16"). This returns a focused answer in `requested`. Omit only if they have named no day at all.',
           },
         },
         required: ['service'],
@@ -74,7 +74,7 @@ function safeJson(s) {
 }
 
 async function runTool(name, args, ctx = {}) {
-  if (name === 'check_availability') return checkAvailability(args)
+  if (name === 'check_availability') return checkAvailability({ ...args, userText: ctx.userText })
   if (name === 'link_contact')
     return linkContactByPhone({ contact: ctx.contact, phone: args.phone, name: args.name, email: args.email })
   return { error: 'unknown_tool' }
@@ -113,7 +113,7 @@ async function prepareTurn({ conversationId, text, visitor = {}, channel = 'webs
   ])
 
   const system = buildSystemPrompt({ contact, knowledge, channel, ghlTags })
-  return { conversationId: conversation.id, contact, messages: toOpenAIMessages(system, history) }
+  return { conversationId: conversation.id, contact, userText: message, messages: toOpenAIMessages(system, history) }
 }
 
 // Non-streaming: returns the full reply at once (with tool support).
@@ -137,7 +137,7 @@ export async function handleChat(args) {
     for (let round = 0; round < 2 && msg?.tool_calls?.length; round++) {
       const toolMsgs = []
       for (const tc of msg.tool_calls) {
-        const result = await runTool(tc.function.name, safeJson(tc.function.arguments), { contact: prep.contact, conversationId: prep.conversationId })
+        const result = await runTool(tc.function.name, safeJson(tc.function.arguments), { contact: prep.contact, conversationId: prep.conversationId, userText: prep.userText })
         toolMsgs.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(result) })
       }
       messages = [...messages, msg, ...toolMsgs]
@@ -206,7 +206,7 @@ export async function* streamChat(args) {
       // Execute tools, append results, loop to stream the follow-up answer.
       const toolMsgs = []
       for (const tc of toolCalls) {
-        const result = await runTool(tc.function.name, safeJson(tc.function.arguments), { contact: prep.contact, conversationId: prep.conversationId })
+        const result = await runTool(tc.function.name, safeJson(tc.function.arguments), { contact: prep.contact, conversationId: prep.conversationId, userText: prep.userText })
         toolMsgs.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(result) })
       }
       messages = [...messages, { role: 'assistant', content: full || null, tool_calls: toolCalls }, ...toolMsgs]
