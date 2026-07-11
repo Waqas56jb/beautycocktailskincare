@@ -115,7 +115,10 @@ function normalizeDate(date, todayStr, tomorrowStr) {
 // Tool the model calls to get REAL open slots, clustered from noon.
 // `date` (optional) focuses the answer on one day so the model doesn't have to
 // scan the whole list (which caused hallucinated / wrong "fully booked" replies).
-export async function checkAvailability({ service = 'facial', date, userText } = {}) {
+export async function checkAvailability({ service = 'facial', date, userText, userTexts } = {}) {
+  // Recent client messages, most-recent-first, to resolve the date they actually
+  // typed (weekday/relative phrases the model miscomputes) with recency priority.
+  const texts = (userTexts && userTexts.length ? userTexts : [userText]).filter(Boolean)
   // facial_wax (combo) and facial both anchor on the facial calendar; only wax-only
   // uses the wax calendar. The TOTAL duration drives which slot fits + clustering.
   const cal = service === 'wax' ? CALENDARS.wax : CALENDARS.facial
@@ -170,17 +173,31 @@ export async function checkAvailability({ service = 'facial', date, userText } =
     // Focused single-day answer when the client named a specific day. Resolve from
     // what the CLIENT actually typed first (weekdays/relative dates the model
     // miscomputes), then fall back to the model-supplied `date`.
-    const target = normalizeDate(userText, todayStr, tomorrowStr) || normalizeDate(date, todayStr, tomorrowStr)
+    let targetFromText = null
+    for (const t of texts) {
+      targetFromText = normalizeDate(t, todayStr, tomorrowStr)
+      if (targetFromText) break // most-recent message with a date wins
+    }
+    const targetFromArg = normalizeDate(date, todayStr, tomorrowStr)
+    const target = targetFromText || targetFromArg
     if (target) {
       const match = days.find((d) => d.date === target)
       const label = /^\d{4}-\d{2}-\d{2}$/.test(target) ? dateLabel(target) : target
+      // The model routinely miscomputes weekday/relative dates. If the date IT
+      // passed disagrees with the client's actual words, warn it loudly so its
+      // reply uses the corrected date, not the one it guessed.
+      const wrongGuess = targetFromText && targetFromArg && targetFromText !== targetFromArg
+      const correction = wrongGuess
+        ? `⚠️ DATE CORRECTION: the date you passed (${dateLabel(targetFromArg)}) is WRONG. The client's words resolve to ${label}. Use ${label} and DISCARD your guessed date completely. `
+        : ''
+      const dateRule = `You MUST state the date as exactly "${label}" — do NOT state or imply any other date/weekday. `
       if (match) {
         result.requested = { date: target, dateLabel: label, available: true, times: match.times }
-        result.instruction = `The client asked about ${label}. It IS OPEN at these exact times, best-first (already clustered — the FIRST one is the best back-to-back slot): ${match.times.join(', ')}. SUGGEST JUST THE FIRST TIME as your recommendation (you may add "or" ONE alternative at most) — do NOT list all of them. If they gave a rough time like "afternoon", pick the first that fits. Only offer more times if they decline. Use "${label}" verbatim, never say it is booked, never invent a time not in this list.`
+        result.instruction = `${correction}${dateRule}The client asked about ${label}. It IS OPEN at these exact times, best-first (already clustered — the FIRST one is the best back-to-back slot): ${match.times.join(', ')}. SUGGEST JUST THE FIRST TIME as your recommendation (you may add "or" ONE alternative at most) — do NOT list all of them. If they gave a rough time like "afternoon", pick the first that fits. Only offer more times if they decline. Never say it is booked, never invent a time not in this list.`
       } else {
         const alt = options.slice(0, 3).map((o) => `${o.dateLabel} ${o.time}`).join('; ')
         result.requested = { date: target, dateLabel: label, available: false }
-        result.instruction = `The client asked about ${label}. It has NO open slots — say that exact date (${label}) is fully booked, then offer the nearest real options: ${alt}. Never invent a time.`
+        result.instruction = `${correction}${dateRule}The client asked about ${label}. It has NO open slots — say that exact date (${label}) is fully booked, then offer the nearest real options: ${alt}. Never invent a time.`
       }
     }
 

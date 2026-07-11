@@ -74,7 +74,7 @@ function safeJson(s) {
 }
 
 async function runTool(name, args, ctx = {}) {
-  if (name === 'check_availability') return checkAvailability({ ...args, userText: ctx.userText })
+  if (name === 'check_availability') return checkAvailability({ ...args, userTexts: ctx.userTexts })
   if (name === 'link_contact')
     return linkContactByPhone({ contact: ctx.contact, phone: args.phone, name: args.name, email: args.email })
   return { error: 'unknown_tool' }
@@ -113,7 +113,10 @@ async function prepareTurn({ conversationId, text, visitor = {}, channel = 'webs
   ])
 
   const system = buildSystemPrompt({ contact, knowledge, channel, ghlTags })
-  return { conversationId: conversation.id, contact, userText: message, messages: toOpenAIMessages(system, history) }
+  // Recent client messages (most-recent-first) so the availability tool can
+  // resolve a date the client mentioned a turn or two ago, not just this turn.
+  const userTexts = history.filter((m) => m.role === 'user').slice(-3).map((m) => m.content).reverse()
+  return { conversationId: conversation.id, contact, userTexts, messages: toOpenAIMessages(system, history) }
 }
 
 // Non-streaming: returns the full reply at once (with tool support).
@@ -137,7 +140,7 @@ export async function handleChat(args) {
     for (let round = 0; round < 2 && msg?.tool_calls?.length; round++) {
       const toolMsgs = []
       for (const tc of msg.tool_calls) {
-        const result = await runTool(tc.function.name, safeJson(tc.function.arguments), { contact: prep.contact, conversationId: prep.conversationId, userText: prep.userText })
+        const result = await runTool(tc.function.name, safeJson(tc.function.arguments), { contact: prep.contact, conversationId: prep.conversationId, userTexts: prep.userTexts })
         toolMsgs.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(result) })
       }
       messages = [...messages, msg, ...toolMsgs]
@@ -206,7 +209,7 @@ export async function* streamChat(args) {
       // Execute tools, append results, loop to stream the follow-up answer.
       const toolMsgs = []
       for (const tc of toolCalls) {
-        const result = await runTool(tc.function.name, safeJson(tc.function.arguments), { contact: prep.contact, conversationId: prep.conversationId, userText: prep.userText })
+        const result = await runTool(tc.function.name, safeJson(tc.function.arguments), { contact: prep.contact, conversationId: prep.conversationId, userTexts: prep.userTexts })
         toolMsgs.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(result) })
       }
       messages = [...messages, { role: 'assistant', content: full || null, tool_calls: toolCalls }, ...toolMsgs]
