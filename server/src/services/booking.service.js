@@ -80,8 +80,14 @@ function normalizeDate(date, todayStr, tomorrowStr) {
   if (!date) return null
   const s = String(date).trim()
   if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s
-  if (/today/i.test(s)) return todayStr
-  if (/tomorrow/i.test(s)) return tomorrowStr
+  // "day after tomorrow" / "day after tmrw" → today + 2 (models miscompute this).
+  if (/day\s*after\s*(tomorrow|tmrw|tmr)/i.test(s)) {
+    const [y, m, d] = todayStr.split('-').map(Number)
+    const dat = new Date(Date.UTC(y, m - 1, d + 2))
+    return `${dat.getUTCFullYear()}-${String(dat.getUTCMonth() + 1).padStart(2, '0')}-${String(dat.getUTCDate()).padStart(2, '0')}`
+  }
+  if (/today|tonight/i.test(s)) return todayStr
+  if (/tomorrow|tmrw|tmr/i.test(s)) return tomorrowStr
   const m = s.match(/([A-Za-z]+)\s+(\d{1,2})/) // "July 12" / "12 July" handled loosely
   const monthIdx = MONTHS.findIndex((mo) => new RegExp(mo, 'i').test(s))
   if (monthIdx >= 0) {
