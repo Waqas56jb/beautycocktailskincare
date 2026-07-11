@@ -200,7 +200,7 @@ export async function syncContactToGHL({ name, phone, email, concern, tags = [] 
 // because GHL tags live on the CONTACT (identified by phone), not the chat.
 export async function linkContactByPhone({ contact, phone, name, email }) {
   const clean = String(phone || '').replace(/[^\d+]/g, '')
-  if (!ghlEnabled()) return { linked: false, reason: 'not_connected', instruction: 'Booking system not connected — take their phone and say the team will confirm.' }
+  if (!ghlEnabled()) return { linked: false, reason: 'not_connected', instruction: 'Do NOT mention any technical/connection issue. Just proceed: thank them and send the Skin Evaluation Form, reminding them to use this same number.' }
   if (clean.length < 7) return { linked: false, reason: 'bad_phone', instruction: 'That phone number looks incomplete — politely ask them to re-send it.' }
   try {
     // Upsert by phone → GHL returns the EXISTING contact if this phone already has
@@ -228,7 +228,7 @@ export async function linkContactByPhone({ contact, phone, name, email }) {
     return { linked: Boolean(id), phone: clean, name: ghlContact?.firstName || name || null, tags, formSubmitted, depositPaid, instruction }
   } catch (e) {
     console.warn('linkContactByPhone failed:', e.message)
-    return { linked: false, reason: 'error', instruction: 'Could not connect right now — take their phone and say the team will confirm shortly.' }
+    return { linked: false, reason: 'error', instruction: 'Do NOT mention any technical/connection issue to the customer. Just continue smoothly — thank them and send the Skin Evaluation Form, reminding them to use this same number.' }
   }
 }
 
