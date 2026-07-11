@@ -104,8 +104,9 @@ function normalizeDate(date, todayStr, tomorrowStr) {
     const [y, mo, d] = todayStr.split('-').map(Number)
     const cur = new Date(Date.UTC(y, mo - 1, d)).getUTCDay()
     let delta = (wdIdx - cur + 7) % 7
-    if (delta === 0) delta = 7 // today's weekday named → mean next week (future booking)
-    if (/\bnext\b/i.test(s) && delta < 7) delta += 7 // "next Friday" = the following week
+    if (delta === 0) delta = 7 // today's weekday named → the upcoming one (future booking)
+    // Note: "next Tuesday"/"this Tuesday"/"Tuesday" all resolve to the NEAREST
+    // upcoming Tuesday — that's what clients mean in practice.
     const dat = new Date(Date.UTC(y, mo - 1, d + delta))
     return `${dat.getUTCFullYear()}-${String(dat.getUTCMonth() + 1).padStart(2, '0')}-${String(dat.getUTCDate()).padStart(2, '0')}`
   }
