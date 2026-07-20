@@ -50,10 +50,10 @@ export const config = {
   booking: {
     // GHL calendar link — the ONLY thing the bot shares when a lead wants to book.
     // The bot never books/reschedules/cancels itself; the calendar handles slots.
-    // Verified working GHL widget booking URL (the /booking/<slug> form 404s).
+    // GHL booking URL for NON-package clients (no active_package tag). Verified 200.
     linkUrl:
       process.env.BOOKING_LINK_URL ||
-      'https://api.leadconnectorhq.com/widget/booking/WDMQURZwG5TWDOMLdXjV',
+      'https://api.leadconnectorhq.com/booking/ej7VCpt15dJsoWfLTHgT',
     // $50 deposit taken at checkout on the booking page.
     depositAmount: process.env.DEPOSIT_AMOUNT || '50',
   },
@@ -67,6 +67,12 @@ export const config = {
     website: 'https://www.beautycocktailskincare.com',
     subscription: 'https://www.beautycocktailskincare.com/subscription',
     instagram: 'https://www.instagram.com/beautycocktail_skincare_surrey',
+    waxing: 'https://www.beautycocktailskincare.com/services/waxing',
+    directions: 'https://share.google/bB4Qfq9SDT3rb1XYZ',
+  },
+  studio: {
+    phone: '249-496-4181',
+    locationShort: '64 Avenue & 120 Street, Surrey',
   },
 
   ghl: {

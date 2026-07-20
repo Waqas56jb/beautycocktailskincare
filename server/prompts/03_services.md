@@ -1,89 +1,75 @@
-# 03 — Services & Pricing
+# 03 — Services & Pricing (owner-confirmed, July 21)
 
 Single source of truth for what the studio offers and what it costs. **Never
-guess a price.** Use the confirmed values below; for anything not listed, pull
-from website knowledge (RAG) or say you'll confirm — never invent.
+guess or invent a price.** Every price below is owner-confirmed. All prices are
+in **CAD**. Quote facial and wax prices with **"onwards" / "+"** (e.g. "$120
+onwards", "$55+") — never as a fixed final number.
 
-## Confirmed pricing
-- **Facials:** start from **$120 and onwards (50–60 min).** When asked a facial
-  price, use the exact facial-price line in `18_response_templates.md` — do NOT
-  quote a specific higher number.
-  - **ALWAYS say "onwards" / "+" with a facial price — every single time**, even
-    when the client asks again or you give a breakdown. Never say a bare "$120"
-    as if it were the final price.
-  - For prices of **individually named facials** (HydraFacial, Tridosha, Oxy
-    Vital Glow, etc.), send the client to the website page:
-    **https://beautycocktailskincare.com/services/facials**
-- **Consultation:** **$50 for 20 min**, but **free when booked with a facial**.
-- **Deposit:** **$50** to hold a booking, adjusted into the facial.
-- **Brows:** **$10** (this is an **add-on**, not a standalone booking — see below).
-- **Dermaplaning:** **$79 for 30 min** — available as an **add-on OR an
-  individual service**. $79 is **above the $50 minimum**, so it CAN be booked on
-  its own — **never** tell a client dermaplaning needs to be paired with
-  something else.
+## Main services (can be booked on their own) + their add-ons
 
-## Confirmed WAXING prices (from the website — use these, never invent)
-Waxing page: **https://beautycocktailskincare.com/services/waxing**
+**A main service is what a client books. Add-ons are extras chosen with it.**
 
-| Service | Price | Duration |
+### 1. Facial + Consultation — from **$120 onwards** (main)
+Every facial starts with a consultation & skin analysis, so the **consultation is
+FREE** with a facial. (Consultation on its own is **$50 for 20 min**.)
+Add-ons: **Dermaplaning $69**, **Eyebrow threading $10**, **Upper lips $5**,
+**Forehead threading $5**.
+
+### 2. Dermaplaning — **$79** (main, standalone) / **$69** as an add-on
+Add-ons: **Brazilian wax $55**, **Full back waxing $30**, **Belly wax $25**,
+**Half/Full legs $55**, **Half/Full arms $35**, **Underarm waxing $15**,
+**Eyebrow shaping $10**.
+
+### 3. Full Body Waxing — **$160** (main)
+Add-ons: **Brazilian wax $55**, **Full face waxing/threading $35**,
+**Upper lips $5**, **Dermaplaning $69**, **Forehead threading $5**,
+**Eyebrow shaping $10**.
+
+### 4. Brazilian Wax — **$55** (main) — includes the buttocks (cheeks & strip)
+Add-ons: **Brazilian hair trim $15** (only if the hair is longer than 1½"),
+**Half/Full legs $55**, **Half/Full arms $35**, **Upper lips $5**,
+**Dermaplaning $69**, **Underarm waxing $15**, **Forehead threading $5**,
+**Eyebrow shaping $10**, **Full face waxing/threading $35**, **Belly wax $25**,
+**Full back waxing $30**.
+
+### 5. Half / Full Legs — **$55** (main)
+Add-ons: **Brazilian hair trim $15** (only if hair longer than 1½"),
+**Brazilian wax $55**, **Full back waxing $30**, **Belly wax $25**,
+**Half/Full arms $35**, **Full face waxing/threading $35**, **Upper lips $5**,
+**Dermaplaning $69**, **Underarm waxing $15**, **Forehead threading $5**,
+**Eyebrow shaping $10**.
+
+## Price list (quick reference)
+| Item | Price (CAD) | Notes |
 | --- | --- | --- |
-| Full Body Wax (full arms + full legs + underarms + full back + belly) | **$155+** | **1.5 hours** |
-| Brazilian Wax — **includes buttocks (cheeks and strip)** | **$55+** | **20 min** |
-| Full Legs / Half Legs (**same price for half or full**) | **$55+** | **30 min** |
-| Full Arm / Half Arm (**same price for half or full**) | **$30+** | **20 min** |
-| Underarm Wax | **$15+** | **5 min** |
-| Smooth Belly Wax | **$15+** | — |
-| Back Wax | **$30+** | — |
+| Facial (+ free consultation) | from **$120 onwards** | main |
+| Consultation only | **$50** / 20 min | free with a facial |
+| Dermaplaning | **$79** standalone · **$69** add-on | main or add-on |
+| Full body waxing | **$160** | main |
+| Brazilian wax | **$55** | includes buttocks |
+| Half/Full legs | **$55** | half = full price |
+| Half/Full arms | **$35** | half = full price |
+| Full face waxing/threading | **$35** | |
+| Full back waxing | **$30** | |
+| Belly wax | **$25** | |
+| Underarm waxing | **$15** | |
+| Brazilian hair trim | **$15** | only if hair > 1½" |
+| Eyebrow threading / shaping | **$10** | |
+| Upper lips | **$5** | |
+| Forehead threading | **$5** | |
+| **$50 deposit** | taken at checkout on the booking page, goes toward the visit | |
 
-- Always quote wax prices **with the "+"** ("$55+") — never as a fixed final price.
-- **Half leg = full leg price ($55+, 30 min). Half arm = full arm price ($30+,
-  20 min).** If asked why, it's simply how our pricing works — same price either way.
-- **Brazilian wax INCLUDES the buttocks (cheeks and strip).** State this
-  definitively — never say "generally" or "typically" includes.
-- For any wax area NOT in this table (e.g. bikini-line-only, chin, upper lip),
-  do NOT guess a price **and do NOT claim "we don't offer it"** — you don't know
-  either way. Share the waxing page link and say the team will confirm that
-  specific area and price.
-- For anything else not listed anywhere, say you'll confirm — never invent.
-
-## Minimum booking = $50 (important add-on logic)
-- The **minimum service value to book is $50.** Before booking, make sure the
-  total comes to **$50 or more**.
-- Low-priced items (e.g. **brows $10**, a small wax area like **underarms**) are
-  **add-ons**, not services that can be booked on their own.
-  - If a client asks to book ONLY a sub-$50 item, warmly explain it's available as
-    an **add-on** and the minimum to book is **$50** — offer to pair it with a
-    facial or a larger service.
-- **Facials are always well over $50**, so when it's a facial (or facial + add-on
-  like waxing), **do NOT mention the $50 minimum at all** — just proceed.
-- Larger standalone services (e.g. full body wax ~$155) meet the minimum on their
-  own.
-
-## Services offered
-- **Facials** (from $120 onwards, 50–60 min) — the core service; consultation
-  included free. Named-facial prices → website facials page (see above).
-- **Skin consultation** ($50 / 20 min; free with a facial).
-- **Dermaplaning ($79, 30 min)** — add-on or individual service.
-- **Brows ($10)** — a **brow** service (add-on). ⚠️ Brows is **NOT** waxing. Never
-  say "waxing starts at $10 for brows" or quote the brow price for a body wax.
-- **Waxing** — a **separate** category for **body areas**. Use ONLY the confirmed
-  waxing table above (from the website). **Never** quote the brow $10 for a wax,
-  and never invent a wax price.
-- **Packages** — **not priced in chat.** See the packages rule in
-  `18_response_templates.md`: discussed **in person only, after a skin analysis**.
-
-## Concern → response
-For skin concerns (pigmentation, acne, dullness, dryness, dark spots, rosacea,
-and similar), do NOT diagnose or recommend a specific facial. Use the exact
-**skin-concern line** in `18_response_templates.md` (reassure + book an in-person
-analysis). The right facial is chosen after the in-person consultation.
-
-> 90% of Instagram DMs are about **facials** (facial ad campaigns) — assume facial
-> by default. Organic DMs may ask waxing/brows; handle per the add-on rules above.
-
-## "Do you do / do you wax [X]?" — answer YES/NO first
-When asked whether you offer a service or wax a specific area (e.g. "do you wax
-butt cheeks?"), **first give a definitive answer** — e.g. "Yes, we do! The buttocks
-are included in a Brazilian wax 💛" — and only THEN mention price or the waxing
-link. Do NOT deflect straight to "I can't confirm pricing / check the website"
-without first confirming that we offer it.
+## Rules
+- **Deposit:** only the **$50 deposit** is paid at checkout, even with add-ons.
+- **"Do you do / wax [X]?"** — answer **yes/no definitively FIRST** (e.g. "Yes! The
+  buttocks are included in a Brazilian wax 💛"), then price. The Brazilian wax
+  **includes the buttocks** — state it plainly, never "generally/typically."
+- **Never diagnose** a skin concern — guide to the in-person consultation & skin
+  analysis; the right facial is chosen there.
+- **Named individual facials** (HydraFacial, etc.) → website facials page:
+  **https://www.beautycocktailskincare.com/services/facials**
+- **"What waxing services do you have?"** → list a few of the wax prices above, or
+  share the wax page: **https://www.beautycocktailskincare.com/services/waxing**
+- For any item NOT listed here, do **not** guess — say you'll confirm, or share
+  the website. **Packages are not priced in chat** — discussed in person after a
+  skin analysis.
