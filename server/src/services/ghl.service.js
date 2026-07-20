@@ -101,8 +101,9 @@ export function clusterSlots(slotsByDay, appts = [], serviceMins = 60, limit = 6
       }
       slots.sort((a, b) => (a.adjacent === b.adjacent ? a.dist - b.dist || a.mins - b.mins : a.adjacent ? -1 : 1))
     } else {
-      // No bookings that day → anchor near noon (earliest-clustered feel).
-      slots.sort((a, b) => Math.abs(a.mins - NOON) - Math.abs(b.mins - NOON) || a.mins - b.mins)
+      // No bookings that day → MORNING-FIRST (owner preference, spec rule #3):
+      // offer the earliest open times first.
+      slots.sort((a, b) => a.mins - b.mins)
     }
     for (const s of slots) ordered.push(s.iso)
   }

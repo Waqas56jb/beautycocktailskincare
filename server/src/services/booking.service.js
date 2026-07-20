@@ -113,6 +113,47 @@ function normalizeDate(date, todayStr, tomorrowStr) {
   return null
 }
 
+function minsOfIsoLocal(iso) {
+  const m = iso.match(/T(\d{2}):(\d{2})/)
+  return m ? Number(m[1]) * 60 + Number(m[2]) : 0
+}
+
+// Parse a time-of-day constraint from the client's words: "after 3", "before noon",
+// "around 5", "morning/afternoon/evening". Studio runs 11am–7pm, so a bare small
+// hour (1–7) is read as PM. Returns {after,before,near,label} in minutes-of-day.
+function parseTimePref(texts) {
+  const s = (texts || []).join('  ').toLowerCase()
+  const toMins = (str) => {
+    const m = String(str).match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/)
+    if (!m) return null
+    let h = Number(m[1])
+    const min = m[2] ? Number(m[2]) : 0
+    const ap = m[3]
+    if (ap === 'pm' && h < 12) h += 12
+    else if (ap === 'am' && h === 12) h = 0
+    else if (!ap && h >= 1 && h <= 7) h += 12 // 11–7 studio: bare 1–7 means PM
+    return h * 60 + min
+  }
+  let m
+  if (/\bnoon\b/.test(s)) {
+    if (/after|past/.test(s)) return { after: 12 * 60, label: 'after noon' }
+    if (/before|by|until|til/.test(s)) return { before: 12 * 60, label: 'before noon' }
+  }
+  if ((m = s.match(/(?:after|from|past)\s+(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)/))) {
+    const v = toMins(m[1]); if (v != null) return { after: v, label: 'after ' + m[1].trim() }
+  }
+  if ((m = s.match(/(?:before|by|until|till|til|earlier than)\s+(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)/))) {
+    const v = toMins(m[1]); if (v != null) return { before: v, label: 'before ' + m[1].trim() }
+  }
+  if ((m = s.match(/(?:around|about|near|at|close to)\s+(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)/)) || (m = s.match(/(\d{1,2}(?::\d{2})?)\s*ish/))) {
+    const v = toMins(m[1]); if (v != null) return { near: v, label: 'around ' + m[1].trim() }
+  }
+  if (/\bmorning\b/.test(s)) return { after: 0, before: 12 * 60, label: 'the morning' }
+  if (/\bafternoon\b/.test(s)) return { after: 12 * 60, before: 17 * 60, label: 'the afternoon' }
+  if (/\bevening|\bnight/.test(s)) return { after: 17 * 60, before: 24 * 60, label: 'the evening' }
+  return null
+}
+
 // Tool the model calls to get REAL open slots, clustered from noon.
 // `date` (optional) focuses the answer on one day so the model doesn't have to
 // scan the whole list (which caused hallucinated / wrong "fully booked" replies).
@@ -193,8 +234,36 @@ export async function checkAvailability({ service = 'facial', date, userText, us
         : ''
       const dateRule = `You MUST state the date as exactly "${label}" — do NOT state or imply any other date/weekday. `
       if (match) {
-        result.requested = { date: target, dateLabel: label, available: true, times: match.times }
-        result.instruction = `${correction}${dateRule}The client asked about ${label}. It IS OPEN at these exact times, best-first (already clustered — the FIRST one is the best back-to-back slot): ${match.times.join(', ')}. SUGGEST JUST THE FIRST TIME as your recommendation (you may add "or" ONE alternative at most) — do NOT list all of them. If they gave a rough time like "afternoon", pick the first that fits. Only offer more times if they decline. Never say it is booked, never invent a time not in this list.`
+        // Full available times for that day (chronological), so we can honour a
+        // time constraint like "after 3" (→ 4/5/6/7, not the noon-clustered set).
+        const dayItems = clustered
+          .filter((iso) => fmtTime(iso).day === target)
+          .map((iso) => ({ mins: minsOfIsoLocal(iso), label: fmtTime(iso).label }))
+          .sort((a, b) => a.mins - b.mins)
+        const pref = parseTimePref(texts)
+
+        if (pref && pref.near == null) {
+          // "after 3" / "before noon" / "afternoon" → filter to the window, earliest-first.
+          const picked = dayItems.filter((x) => (pref.after == null || x.mins >= pref.after) && (pref.before == null || x.mins <= pref.before))
+          if (picked.length) {
+            const times = picked.slice(0, 3).map((x) => x.label)
+            result.requested = { date: target, dateLabel: label, available: true, timePref: pref.label, times }
+            result.instruction = `${correction}${dateRule}The client wants ${label}, ${pref.label}. ONLY these matching times are open, earliest-first: ${times.join(', ')}. Offer the FIRST one (you may add one more). Do NOT offer any time outside ${pref.label}. Never say booked; never invent a time.`
+          } else {
+            const allT = dayItems.slice(0, 3).map((x) => x.label)
+            result.requested = { date: target, dateLabel: label, available: true, timePref: pref.label, times: [] }
+            result.instruction = `${correction}${dateRule}There are NO open times ${pref.label} on ${label}. Tell them nothing is open ${pref.label} that day, and offer the day's actual open times instead: ${allT.join(', ') || 'none'}. Never invent a time.`
+          }
+        } else if (pref && pref.near != null) {
+          // "around 5" → order by closeness to that time.
+          const picked = [...dayItems].sort((a, b) => Math.abs(a.mins - pref.near) - Math.abs(b.mins - pref.near) || a.mins - b.mins)
+          const times = picked.slice(0, 3).map((x) => x.label)
+          result.requested = { date: target, dateLabel: label, available: true, timePref: pref.label, times }
+          result.instruction = `${correction}${dateRule}The client wants ${label} ${pref.label}. Closest open times: ${times.join(', ')}. Offer the FIRST (closest) one. Never say booked; never invent a time.`
+        } else {
+          result.requested = { date: target, dateLabel: label, available: true, times: match.times }
+          result.instruction = `${correction}${dateRule}The client asked about ${label}. It IS OPEN at these exact times, best-first (already clustered — the FIRST one is the best back-to-back slot): ${match.times.join(', ')}. SUGGEST JUST THE FIRST TIME as your recommendation (you may add "or" ONE alternative at most) — do NOT list all of them. Only offer more times if they decline. Never say it is booked, never invent a time not in this list.`
+        }
       } else {
         const alt = options.slice(0, 3).map((o) => `${o.dateLabel} ${o.time}`).join('; ')
         result.requested = { date: target, dateLabel: label, available: false }

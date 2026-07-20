@@ -21,9 +21,18 @@ export const config = {
     .map((s) => s.trim())
     .filter(Boolean),
 
+  // Claude powers the chatbot.
+  anthropic: {
+    apiKey: required('ANTHROPIC_API_KEY'),
+    model: process.env.ANTHROPIC_MODEL || 'claude-opus-4-8',
+    maxTokens: Number(process.env.ANTHROPIC_MAX_TOKENS) || 700,
+  },
+
+  // OpenAI is now ONLY used for knowledge-base embeddings (Anthropic has no
+  // embeddings API). Optional — if absent/out of credit, RAG turns itself off
+  // and the bot answers from its prompt modules instead.
   openai: {
-    apiKey: required('OPENAI_API_KEY'),
-    model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+    apiKey: process.env.OPENAI_API_KEY || '',
     embeddingModel: process.env.OPENAI_EMBEDDING_MODEL || 'text-embedding-3-small',
   },
 
@@ -39,9 +48,24 @@ export const config = {
   },
 
   booking: {
-    // Real GHL booking + deposit form URL. If empty, the bot must NOT invent a
-    // link — it says the team will send the form instead.
-    formUrl: process.env.BOOKING_FORM_URL || '',
+    // GHL calendar link — the ONLY thing the bot shares when a lead wants to book.
+    // The bot never books/reschedules/cancels itself; the calendar handles slots.
+    linkUrl:
+      process.env.BOOKING_LINK_URL ||
+      'https://api.leadconnectorhq.com/booking/beauty-cocktail-skincare-c36y0l7mq1',
+    // $50 deposit taken at checkout on the booking page.
+    depositAmount: process.env.DEPOSIT_AMOUNT || '50',
+  },
+
+  prices: {
+    // Consultation only — $50 for 20 minutes. Facial includes the consultation free.
+    consultationOnly: process.env.CONSULTATION_PRICE || '50',
+  },
+
+  links: {
+    website: 'https://www.beautycocktailskincare.com',
+    subscription: 'https://www.beautycocktailskincare.com/subscription',
+    instagram: 'https://www.instagram.com/beautycocktail_skincare_surrey',
   },
 
   ghl: {

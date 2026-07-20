@@ -2,7 +2,13 @@ import { openai } from '../lib/openai.js'
 import { supabase } from '../lib/supabase.js'
 import { config } from '../config/env.js'
 
+// Anthropic has NO embeddings API, so vector RAG still needs OpenAI. If that key
+// is missing or out of credit we turn RAG off for the process (one warning, no
+// repeated failing round-trips) — the bot then answers from its prompt modules.
+let ragDisabled = !config.openai.apiKey
+
 export async function embed(text) {
+  if (!config.openai.apiKey) throw new Error('no OpenAI key for embeddings')
   const res = await openai.embeddings.create({
     model: config.openai.embeddingModel,
     input: text,
@@ -25,6 +31,7 @@ async function knowledgeBaseHasRows() {
 // chat flow never breaks just because knowledge isn't loaded yet.
 export async function searchKnowledge(query, { matchCount = 5, threshold = 0.2 } = {}) {
   try {
+    if (ragDisabled) return []
     // Skip the embeddings round-trip entirely when there's nothing to retrieve.
     if (!(await knowledgeBaseHasRows())) return []
     const embedding = await embed(query)
@@ -36,7 +43,8 @@ export async function searchKnowledge(query, { matchCount = 5, threshold = 0.2 }
     if (error) throw error
     return data || []
   } catch (err) {
-    console.warn('searchKnowledge failed (continuing without RAG):', err.message)
+    ragDisabled = true // stop retrying a failing embeddings key every message
+    console.warn('searchKnowledge disabled (continuing without RAG):', err.message)
     return []
   }
 }

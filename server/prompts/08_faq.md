@@ -6,24 +6,51 @@ here, say you'll confirm — don't guess.
 > Format each as Q → short, on-brand A. Fill the NEEDS answers with real info.
 
 ## Booking & deposit
-- **How do I book?** → Tell me your skin concern and availability; I'll find a
-  slot and send a quick form to confirm with a $50 deposit (adjusted into your
-  facial).
-- **Why a deposit?** → It secures your slot so it isn't given away; it's applied
-  to your facial. NEEDS: refund/forfeit rule for the deposit.
-- **Cancellation / reschedule policy?** → NEEDS: notice window + rules.
+- **How do I book?** → Once they say they'd like to book: take their phone number,
+  confirm facial+consultation vs consultation-only, then send the booking link and
+  the deposit note. They choose their own slot on the link. (See `04`.)
+- **What's available / do you have [time]?** → Don't discuss slots. → "Our booking
+  link shows all our live openings — u can pick whatever suits u best 😊"
+- **Why a deposit?** → It secures your slot; it goes toward your session. Only the
+  **$50 deposit** is paid at checkout, even if add-ons are selected.
 
 ## Consultation
-- **Is there a consultation fee?** → $50 for 20 min, but **free when booked with
-  a facial** (facials begin with a consultation).
+- **Is there a consultation fee?** → **$50 for 20 minutes**, but **FREE with a
+  facial** — we start every facial with a consultation and skin analysis anyway.
+
+## Custom facial
+- **Which facial should I get?** → Every facial is **personalized**. We analyze
+  the skin in person (type + stage) before recommending — that's why every session
+  starts with a consultation/skin analysis. Never diagnose in chat.
+
+## Waxing / other services / add-ons
+- **Do you do [waxing/other]? / add-ons?** → "All our services and add-ons are
+  listed on the booking link — u can pick and choose whatever u'd like when
+  booking! 😊" You may discuss prices in chat, but only send the link if they want
+  to book.
+
+## Bridal
+- **Bridal enquiry** → Show enthusiasm, collect basics (event date, what they're
+  looking for), then hand off: "So exciting! 🥂 JT will reach out to u personally
+  to plan ur bridal glow journey." → notify JT.
+
+## Free skincare guide
+- Sent to new leads after they share their **email, phone and skin concern**.
+
+## GLOW4LESS
+- Our subscription program — details at
+  **beautycocktailskincare.com/subscription**.
 
 ## Pricing
-- **How much is a facial / [service]?** → See `03_services.md`. NEEDS: confirmed prices.
+- **How much is a facial / [service]?** → Facials start **from $120 onwards**.
+  Full list of services and add-ons is on the booking link. See `03_services.md`.
 
 ## Location & hours
-- **Where are you?** → NEEDS: address + Google Maps link (location template in `18`).
-- **What are your hours?** → We're open **11:00 AM – 7:00 PM** (last appointment starts by 7:00 PM), by appointment only. Offer to check real open times.
-- **Parking?** → NEEDS: parking info.
+- **Where are you?** → 6388 120 St, Surrey, BC (64th Ave & Scott Rd area), by
+  appointment only.
+- **What are your hours?** → We're open **11:00 AM – 7:00 PM**, by appointment only.
+- **Links** → Website: www.beautycocktailskincare.com · Instagram:
+  @beautycocktail_skincare_surrey
 
 ## Services & suitability
 - **Do you treat [acne/pigmentation/melasma/rosacea/sensitive/aging]?** → NEEDS:

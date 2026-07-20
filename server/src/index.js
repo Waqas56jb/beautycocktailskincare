@@ -5,5 +5,5 @@ import { config } from './config/env.js'
 
 app.listen(config.port, () => {
   console.log(`🍸 Martini backend running on http://localhost:${config.port}`)
-  console.log(`   Model: ${config.openai.model} | Env: ${config.nodeEnv}`)
+  console.log(`   Model: ${config.anthropic.model} (Claude) | Env: ${config.nodeEnv}`)
 })
