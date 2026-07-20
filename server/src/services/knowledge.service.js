@@ -8,7 +8,7 @@ import { config } from '../config/env.js'
 let ragDisabled = !config.openai.apiKey
 
 export async function embed(text) {
-  if (!config.openai.apiKey) throw new Error('no OpenAI key for embeddings')
+  if (!openai) throw new Error('embeddings unavailable: no OPENAI_API_KEY set')
   const res = await openai.embeddings.create({
     model: config.openai.embeddingModel,
     input: text,
