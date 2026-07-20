@@ -195,15 +195,18 @@ function studioInfoLine() {
   ].join('\n')
 }
 
-// Classify the person from their GHL tags / contact so the bot can talk to each
-// type its own way (owner: "check what type of client, then bot handles based on
-// that"). Priority: package > active booking > returning > lead (default).
+// Classify the person from their GHL tags (owner-confirmed tag names, July 21):
+//   package client  → tag "active package" / "active_package"
+//   active booking  → tag "active_booking" (+ "facial_appt" / "wax_appt")
+//   returning client→ tag "client"
+//   everyone else   → lead (the ONLY type this phase actively serves)
+// Priority: package > active booking > returning > lead.
 export function classifyContact(ghlTags, contact) {
-  const tags = (ghlTags || []).map((t) => String(t).toLowerCase())
+  const tags = (ghlTags || []).map((t) => String(t).toLowerCase().trim())
   const has = (re) => tags.some((t) => re.test(t))
-  if (has(/package/) || contact?.package) return 'package'
-  if (has(/active[_ ]?booking/) || contact?.booked_date) return 'active_booking'
-  if (has(/client|returning|vip|facial_client|wax_client/) || (contact?.client_type && !/new/i.test(contact.client_type || ''))) return 'returning'
+  if (has(/active[_ ]?package/) || has(/^package$/) || contact?.package) return 'package'
+  if (has(/active[_ ]?booking/) || has(/facial[_ ]?appt/) || has(/wax[_ ]?appt/) || contact?.booked_date) return 'active_booking'
+  if (has(/^client$/) || has(/(facial|wax)[_ ]?client/) || has(/returning/) || (contact?.client_type && !/new/i.test(contact.client_type || ''))) return 'returning'
   return 'lead'
 }
 
