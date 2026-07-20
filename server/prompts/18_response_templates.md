@@ -38,9 +38,10 @@ form. Always get the skin concern unless already mentioned.)
 >   session with a consultation and skin analysis anyways 😊
 
 ## Send the booking link (only once they've said they want to book)
+Always a clickable markdown link — never a bare URL:
 > Here's our booking link — select Facial + Consultation, fill in ur form, and
 > choose ur slot. It's easy! If any questions, let me know 💛
-> https://api.leadconnectorhq.com/booking/beauty-cocktail-skincare-c36y0l7mq1
+> [**Book your appointment here**](https://api.leadconnectorhq.com/widget/booking/WDMQURZwG5TWDOMLdXjV)
 
 ## ALWAYS follow the link with the deposit note (never skip)
 > Just a heads up — even if u add other services or add-ons, when asked at

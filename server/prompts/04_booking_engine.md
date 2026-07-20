@@ -47,9 +47,11 @@ If it isn't already clear:
 
 > Here's our booking link — select Facial + Consultation, fill in ur form, and
 > choose ur slot. It's easy! If any questions, let me know 💛
-> https://api.leadconnectorhq.com/booking/beauty-cocktail-skincare-c36y0l7mq1
+> [**Book your appointment here**](https://api.leadconnectorhq.com/widget/booking/WDMQURZwG5TWDOMLdXjV)
 
-Always output that exact URL. Never invent another link.
+**Always send it as a clickable markdown link like above — never paste the bare
+URL** (a raw URL renders as dead plain text in the chat). Use that exact URL;
+never invent another link.
 
 ## RULE 4 — ALWAYS follow the link with the deposit note
 Never skip this:

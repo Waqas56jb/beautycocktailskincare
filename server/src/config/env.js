@@ -50,9 +50,10 @@ export const config = {
   booking: {
     // GHL calendar link — the ONLY thing the bot shares when a lead wants to book.
     // The bot never books/reschedules/cancels itself; the calendar handles slots.
+    // Verified working GHL widget booking URL (the /booking/<slug> form 404s).
     linkUrl:
       process.env.BOOKING_LINK_URL ||
-      'https://api.leadconnectorhq.com/booking/beauty-cocktail-skincare-c36y0l7mq1',
+      'https://api.leadconnectorhq.com/widget/booking/WDMQURZwG5TWDOMLdXjV',
     // $50 deposit taken at checkout on the booking page.
     depositAmount: process.env.DEPOSIT_AMOUNT || '50',
   },
