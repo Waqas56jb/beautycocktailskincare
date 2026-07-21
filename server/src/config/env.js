@@ -69,6 +69,8 @@ export const config = {
     instagram: 'https://www.instagram.com/beautycocktail_skincare_surrey',
     waxing: 'https://www.beautycocktailskincare.com/services/waxing',
     directions: 'https://share.google/bB4Qfq9SDT3rb1XYZ',
+    bridal: 'https://www.beautycocktailskincare.com/services/make-up---bridal-service',
+    offers: 'https://www.beautycocktailskincare.com/services/offers',
   },
   studio: {
     phone: '249-496-4181',
