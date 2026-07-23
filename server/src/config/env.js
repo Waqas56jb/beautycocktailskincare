@@ -71,10 +71,16 @@ export const config = {
     directions: 'https://share.google/bB4Qfq9SDT3rb1XYZ',
     bridal: 'https://www.beautycocktailskincare.com/services/make-up---bridal-service',
     offers: 'https://www.beautycocktailskincare.com/services/offers',
+    map: 'https://maps.app.goo.gl/xMTnqg5X6gZGmwh47',
+    terms: 'https://www.beautycocktailskincare.com/terms-of-service',
+    termsPackage: 'https://www.beautycocktailskincare.com/terms-package',
+    privacy: 'https://www.beautycocktailskincare.com/privacy-policy',
   },
   studio: {
     phone: '249-496-4181',
     locationShort: '64 Avenue & 120 Street, Surrey',
+    // For active-booking clients arriving on the day.
+    locationDetail: 'inside the Urban Cave — enter from the front side (Scott Road / 120 Street)',
   },
 
   ghl: {

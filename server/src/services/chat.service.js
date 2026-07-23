@@ -1,10 +1,10 @@
 import { anthropic, textOf } from '../lib/anthropic.js'
 import { config } from '../config/env.js'
-import { buildSystemPrompt } from '../lib/prompts.js'
+import { buildSystemPrompt, classifyContact } from '../lib/prompts.js'
 import { searchKnowledge } from './knowledge.service.js'
 import { getContact, findOrCreateContact } from './contacts.service.js'
 import { extractAndSave } from './extraction.service.js'
-import { linkContactByPhone, lookupAppointmentByPhone } from './booking.service.js'
+import { linkContactByPhone, lookupAppointmentByPhone, getUpcomingAppointment } from './booking.service.js'
 import { ghlEnabled, getContactTags } from './ghl.service.js'
 import {
   getConversation,
@@ -91,7 +91,14 @@ async function prepareTurn({ conversationId, text, visitor = {}, channel = 'webs
     contact?.ghl_contact_id && ghlEnabled() ? getContactTags(contact.ghl_contact_id) : Promise.resolve([]),
   ])
 
-  const system = buildSystemPrompt({ contact, knowledge, channel, ghlTags })
+  // For active-booking clients, pull their upcoming appointment fresh (read-only)
+  // so the support module can greet with the date/time + fast-help window.
+  let appointment = null
+  if (contact?.ghl_contact_id && ghlEnabled() && classifyContact(ghlTags, contact) === 'active_booking') {
+    appointment = await getUpcomingAppointment(contact.ghl_contact_id)
+  }
+
+  const system = buildSystemPrompt({ contact, knowledge, channel, ghlTags, appointment })
   const userTexts = history.filter((m) => m.role === 'user').slice(-3).map((m) => m.content).reverse()
   return {
     conversationId: conversation.id,

@@ -369,6 +369,32 @@ function fmtNaive(s) {
   return `${wd}, ${MONTHS[mo - 1]} ${d} at ${h12}:${String(mi).padStart(2, '0')} ${ampm}`
 }
 
+// The active-booking client's next appointment, plus a "fast-help" flag (message
+// arriving within ~30 min of the start → they're likely on the way). READ-ONLY.
+export async function getUpcomingAppointment(contactId) {
+  if (!ghlEnabled() || !contactId) return null
+  const nowKey = nowStudioKey()
+  const a = (await getContactAppointments(contactId))
+    .filter((x) => naiveKey(x.start) && naiveKey(x.start) >= nowKey)
+    .sort((x, y) => naiveKey(x.start).localeCompare(naiveKey(y.start)))[0]
+  if (!a) return null
+
+  // Both the appointment (naive Pacific) and "now" (Pacific) are compared as
+  // wall-clock via Date.UTC so the minute-difference is correct without TZ math.
+  let fastHelp = false
+  const m = String(a.start).match(/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/)
+  if (m) {
+    const [, y, mo, d, hh, mi] = m.map(Number)
+    const apptMs = Date.UTC(y, mo - 1, d, hh, mi)
+    const p = new Intl.DateTimeFormat('en-CA', { timeZone: config.ghl.timezone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(new Date())
+    const g = (t) => Number(p.find((x) => x.type === t)?.value || 0)
+    const nowMs = Date.UTC(g('year'), g('month') - 1, g('day'), g('hour') === 24 ? 0 : g('hour'), g('minute'))
+    const minsUntil = (apptMs - nowMs) / 60000
+    fastHelp = minsUntil <= 30 && minsUntil >= -60 // within 30 min before → up to 1 hr after start
+  }
+  return { when: fmtNaive(a.start), status: a.status || '', fastHelp }
+}
+
 // Look up a customer's upcoming appointment by phone so the bot can tell them the
 // date/time right here on the website (owner: give appointment details on the site,
 // do NOT redirect to WhatsApp/Instagram). Read-only — never reschedules/cancels.

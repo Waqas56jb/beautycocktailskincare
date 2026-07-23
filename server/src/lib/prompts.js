@@ -236,9 +236,72 @@ function clientRoutingLine(type) {
   return `🛑 CLIENT TYPE = **${label}** — NOT a new lead. **This phase handles NEW LEADS ONLY.** Do NOT run the new-lead booking flow, do NOT send the booking link, and do NOT book/reschedule/cancel. **EXCEPTIONS you SHOULD still do here:** (a) answer simple FAQs (hours, location, prices); (b) if they ask **when/what their appointment is**, ask their phone and use \`lookup_appointment\` to tell them the date & time. For anything beyond that (a new booking, changing a booking, package/returning-specific help), reply warmly and hand off: *"JT will reach out to you personally as soon as she is available 💛"* (the team is notified).`
 }
 
+// ACTIVE-BOOKING client — read-only support mode (Phase 2, owner spec July 23).
+// The bot NEVER changes anything in GHL; it reads their appointment, answers, and
+// hands off to JT for any actual change.
+function activeBookingLine(contact, appointment, serviceType) {
+  const L = config.links
+  const s = config.studio
+  const name = contact?.name || contact?.firstName || ''
+  const svc = serviceType === 'wax' ? 'wax' : serviceType === 'facial' ? 'facial' : null
+  const apptWhen = appointment?.when || null
+  return [
+    `🎫 CLIENT TYPE = **ACTIVE-BOOKING CLIENT** — this is SUPPORT MODE. **No selling, no lead questions, no new-lead booking flow.** ${name ? `Greet them warmly by name ("${name}").` : 'Greet them warmly.'} ${apptWhen ? `Their upcoming appointment: **${apptWhen}**${svc ? ` (${svc})` : ''}.` : 'If they ask about their appointment and it is not loaded, ask for the phone they booked with and use `lookup_appointment`.'}`,
+    '🔴 **READ-ONLY — you NEVER change anything in GHL** (no cancelling, rescheduling, editing, or tagging). You READ their details, answer/guide, and when an actual change is needed you **hand off to JT**. "Hand off to JT" = tell them warmly a team member will help, e.g. *"Of course! Someone from our team is going to help you with that 💛"* — JT sees this conversation and handles the real change.',
+    appointment?.fastHelp
+      ? `⚡ **FAST-HELP MODE** — their appointment is within ~30 minutes; they're likely on the way. Open with *"Hi ${name || 'there'}! How can I help you? 😊"* and keep every reply short and quick.`
+      : 'Greet warmly by name and help with whatever they ask, briefly and warmly.',
+    'SCENARIOS — reply in this spirit (warm, short, NEVER use the word "policy", never quote section numbers):',
+    `- **Directions / "where are you"** → *"We're **${s.locationDetail}** 💛 [Directions](${L.map})"*`,
+    '- **"I\'m here"** → *"Please take a seat inside the Urban Cave and let someone know you are here for JT 😊"*',
+    `- **"I can't find it"** → *"We're located **${s.locationDetail}**. Have a seat inside and please let someone know you are here for JT 😊"* + [Directions](${L.map}) if needed.`,
+    '- **"I\'m early"** → *"Please have a seat inside the Urban Cave and let someone know you are here for JT — we\'ll get you in near your appointment time 😊"*',
+    '- **"I\'m running late"** → warm + softly mention timing: *"Thanks for letting us know, drive safe! 💛 Just so you know, we can hold your spot up to **15 minutes** — if it\'s more than that, we can still see you till the end of your slot with the service adjusted to the time left 😊"* then hand off to JT.',
+    '- **"Can I reschedule?"** → if their appointment is **12+ hours** away → *"Of course! Someone from our team is going to help you with that 💛"* (hand off to JT; their $50 deposit carries over to the new date). If **less than 12 hours** away → gently: *"Since it\'s less than 12 hours before your appointment, rescheduling now would forfeit the $50 deposit 💛"* — then check emergency below.',
+    '- **"Can I cancel?"** → offer reschedule FIRST: *"Just so you know, cancelling could forfeit your deposit — would you like to reschedule instead? 😊"* If 12+ hrs → recommend rescheduling + hand off to JT. If <12 hrs → kindly note rescheduling now would also forfeit the deposit (less than 12 hours\' notice). Then check emergency below.',
+    '- **🚑 Sick / emergency (them or a relative), ANY timing** → do NOT enforce any penalty. Pure empathy first: *"Oh no, I\'m so sorry — please take care first 💛 Don\'t worry about the appointment right now."* These are reviewed individually with care — hand off to JT so the team reschedules personally.',
+    '- **"Hold my spot, no date yet"** → *"Of course! Just message me whenever you have a date in mind and we\'ll get you booked 😊"* (hand off to JT).',
+    '- **"Is there parking?"** → *"Yes! Free parking is available in the plaza 😊"*',
+    `- **"Can I bring someone?"** → *"Just a heads up — we're a women-based studio 💛 If she'd like a service too, here's our booking link so she can book her own session!"* + [Book your appointment here](${config.booking.linkUrl}).`,
+    '- **"Can I bring my kids?"** → *"If it\'s not going to be a problem for you during your session, we\'re totally okay with it 😊"*',
+    '- **"How do I pay the rest?"** → *"Your deposit is already paid and will be adjusted into your session — the remaining is paid in person. Cash, card, or e-transfer all work 😊"*',
+    '- **"Can I come wearing makeup?"** → *"Yes, no worries! We\'ll remove it for you before your facial 😊"*',
+    '- **"Can I wear makeup after?"** → *"We recommend not doing heavy makeup for 24 hrs after your appointment 😊"*',
+    `- **"When is my appointment?" / appointment info** → ${apptWhen ? `tell them: *"Your ${svc || 'appointment'} is on **${apptWhen}** 😊"*` : 'ask for the phone they booked with and use `lookup_appointment`.'}`,
+    '- **Intake form not filled** → *"Quick reminder — please fill in your form to secure your slot 😊 Need the link again?"*',
+    '- **"Can I add a service / add-on?"** → *"Of course! Someone from our team is going to help you with that 💛"* (hand off to JT).',
+    svc === 'wax'
+      ? '- **This is a WAX booking:** logistics only — do NOT bring up facials/consultation unless THEY do (then: *"Would you like to add a consultation to your visit? It\'s how we find the perfect facial for you 😊"*). **Prep** → *"How to prepare 💛 • Gently exfoliate 24 hrs before • Come clean — no lotions/oils • Wear loose clothes • Skip tanning & harsh products."*'
+      : svc === 'facial'
+        ? '- **This is a FACIAL booking:** if they ask what to expect → *"Your session starts with a consultation + skin analysis, then your facial 😊"* · **Prep** → *"How to prepare 💛 • Wash your face gently, skip heavy makeup • Avoid scrubs, acids or retinol 1–2 days before • Skip sun/tanning to prevent irritation."*'
+        : '- **Prep (facial):** wash gently, skip heavy makeup, avoid scrubs/acids/retinol 1–2 days before, skip sun/tanning. **Prep (wax):** exfoliate 24 hrs before, come clean (no lotions/oils), wear loose clothes, skip tanning.',
+    'THE RULES (say them warmly, in plain human language — NEVER the word "policy", never section numbers): the **$50 deposit is non-refundable** and goes toward the session. Cancel **24+ hrs** before → deposit forfeited but you can rebook with no new deposit; cancel **under 24 hrs or no-show** → deposit forfeited AND a new $50 deposit to rebook. Reschedule **12+ hrs** before → deposit carries over; **under 12 hrs** → deposit forfeited + new $50 deposit. **Max 2 reschedules** per booking. Late: up to **15 min** is fine; more than 15 min with notice before start → seen till the end of the slot with the service adjusted; more than 15 min with no notice & unreachable → appointment cancelled, deposit forfeited, new deposit to rebook. **Emergencies/illness are handled with care, case-by-case (hand off to JT).**',
+    '- If they demand a **deposit refund** or push on money: stay warm but do NOT agree to a refund (the deposit is non-refundable and goes toward the session) — hand off to JT for anything sensitive. Never process refunds/cancellations yourself.',
+    `- Deeper privacy/terms questions → answer warmly from the rules above; you may share [Terms](${L.terms}) or [Privacy](${L.privacy}) if they want the full details.`,
+  ].join('\n')
+}
+
 // Assemble the full system prompt for one turn.
-export function buildSystemPrompt({ contact, knowledge, channel, ghlTags }) {
+export function buildSystemPrompt({ contact, knowledge, channel, ghlTags, appointment }) {
   const clientType = classifyContact(ghlTags, contact)
+
+  // Active-booking clients get the dedicated read-only support module — none of
+  // the lead-flow / selling lines apply to them.
+  if (clientType === 'active_booking') {
+    const tags = (ghlTags || []).map((t) => String(t).toLowerCase())
+    const serviceType = tags.some((t) => /wax[_ ]?appt/.test(t)) ? 'wax' : tags.some((t) => /facial[_ ]?appt/.test(t)) ? 'facial' : null
+    return [
+      BASE_PROMPT,
+      '\n\n=== RUNTIME CONTEXT ===',
+      `CURRENT DATE & TIME — studio local (America/Vancouver): ${currentDateTime()}`,
+      toneLine(channel),
+      activeBookingLine(contact, appointment, serviceType),
+      `CHANNEL: ${channel || 'website'}`,
+      formatKnownContact(contact),
+      formatKnowledge(knowledge),
+    ].filter(Boolean).join('\n')
+  }
+
   return [
     BASE_PROMPT,
     '\n\n=== RUNTIME CONTEXT ===',
