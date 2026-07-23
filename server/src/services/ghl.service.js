@@ -123,6 +123,37 @@ export async function upsertContact({ name, firstName, phone, email, tags = [], 
   return data.contact || data
 }
 
+// Read-only lookup of a contact by phone (needs Contacts:View scope).
+export async function getContactByPhone(phone) {
+  const clean = String(phone || '').replace(/[^\d+]/g, '')
+  if (!ghlEnabled() || clean.length < 7) return null
+  const last10 = (p) => String(p || '').replace(/\D/g, '').slice(-10)
+  try {
+    const data = await ghlFetch('/contacts/', { query: { locationId, query: clean, limit: 5 } })
+    const contacts = data.contacts || []
+    return contacts.find((c) => last10(c.phone) === last10(clean)) || contacts[0] || null
+  } catch {
+    return null
+  }
+}
+
+// A contact's appointments (needs Contacts:View or Calendars:View scope).
+export async function getContactAppointments(contactId) {
+  if (!ghlEnabled() || !contactId) return []
+  try {
+    const data = await ghlFetch(`/contacts/${contactId}/appointments`)
+    return (data.events || data.appointments || []).map((e) => ({
+      calendarId: e.calendarId,
+      title: e.title,
+      status: e.appointmentStatus || e.status,
+      start: e.startTime,
+      end: e.endTime,
+    }))
+  } catch {
+    return []
+  }
+}
+
 export async function addTags(contactId, tags = []) {
   if (!tags.length) return
   return ghlFetch(`/contacts/${contactId}/tags`, { method: 'POST', body: { tags } })

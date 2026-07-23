@@ -5,11 +5,14 @@ import {
   clusterSlots,
   upsertContact,
   getContactTags,
+  getContactByPhone,
+  getContactAppointments,
   addNote,
   createAppointment,
   CALENDARS,
 } from './ghl.service.js'
 import { updateContact } from './contacts.service.js'
+import { config } from '../config/env.js'
 
 // How many appointments would be back-to-back if `[candStart, candEnd]` is booked?
 // (Existing appts whose end === a start chain together.) Owner rule: max 3.
@@ -336,6 +339,39 @@ export async function linkContactByPhone({ contact, phone, name, email }) {
   } catch (e) {
     console.warn('linkContactByPhone failed:', e.message)
     return { linked: false, reason: 'error', instruction: 'Do NOT mention any technical/connection issue to the customer. Just continue smoothly — thank them and send the Skin Evaluation Form, reminding them to use this same number.' }
+  }
+}
+
+// Look up a customer's upcoming appointment by phone so the bot can tell them the
+// date/time right here on the website (owner: give appointment details on the site,
+// do NOT redirect to WhatsApp/Instagram). Read-only — never reschedules/cancels.
+export async function lookupAppointmentByPhone({ phone } = {}) {
+  const clean = String(phone || '').replace(/[^\d+]/g, '')
+  if (!ghlEnabled()) return { ok: false, instruction: 'Take their phone number and warmly say our team will confirm their appointment details shortly. Do NOT mention any technical issue, and do NOT redirect them to WhatsApp or Instagram.' }
+  if (clean.length < 7) return { ok: false, instruction: 'That phone number looks incomplete — politely ask them to re-send the number they booked with.' }
+  try {
+    const contact = await getContactByPhone(clean)
+    if (!contact?.id) return { ok: true, found: false, instruction: `No contact found under ${clean}. Tell them you could not find a booking under that number, ask them to double-check the number they booked with, and offer to help them book a new facial + consultation.` }
+
+    const now = Date.now()
+    const upcoming = (await getContactAppointments(contact.id))
+      .filter((a) => a.start && new Date(a.start).getTime() >= now - 3600000)
+      .sort((a, b) => new Date(a.start) - new Date(b.start))
+      .slice(0, 3)
+
+    if (!upcoming.length) return { ok: true, found: false, name: contact.firstName, instruction: `Found their contact but NO upcoming appointment. Tell them there is no upcoming booking under ${clean}, and offer to help them book one.` }
+
+    const fmt = (iso) => new Intl.DateTimeFormat('en-US', { timeZone: config.ghl.timezone, weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(iso))
+    const list = upcoming.map((a) => ({ when: fmt(a.start), title: a.title || 'appointment', status: a.status || '' }))
+    return {
+      ok: true,
+      found: true,
+      name: contact.firstName || null,
+      appointments: list,
+      instruction: `Give them their upcoming appointment details warmly and clearly right here: ${list.map((a) => `${a.title} on ${a.when}${a.status ? ` (${a.status})` : ''}`).join('; ')}. Do NOT reschedule or cancel yourself — if they want a change, say you've flagged it for JT who will reach out to help. Do NOT redirect them to WhatsApp/Instagram.`,
+    }
+  } catch {
+    return { ok: false, instruction: 'Warmly say our team will confirm their appointment details shortly. Do NOT mention any technical error, and do NOT redirect them to WhatsApp or Instagram.' }
   }
 }
 

@@ -165,11 +165,11 @@ function securityLine(channel) {
     return 'SECURITY: This is a verified channel (the person is identified by their platform account or phone number) — you MAY handle reschedule / cancel / booking-status / past-session requests directly.'
   }
   return [
-    'SECURITY — this is the WEBSITE (visitor identity is NOT verified). This rule OVERRIDES everything else:',
-    '- For any request about a PRE-EXISTING booking or personal history — reschedule, cancel, "do I have a booking?", "when is my appointment", or past/previous sessions — do NOT look it up, do NOT confirm or deny whether they have a booking, do NOT act on it, and do NOT ask for their phone for this purpose (anyone could know a phone number).',
-    '- Instead, ALWAYS redirect them warmly to our verified channels using these EXACT markdown links (compact, clickable — never paste raw long URLs): "For your security, I can\'t change an existing booking or share personal account details here 💛. Please reach us so our team can verify you and help securely — [Message us on WhatsApp](https://wa.me/12494964181) or [Message us on Instagram](https://www.instagram.com/beautycocktail_skincare_surrey)."',
-    '- **ALLOWED here — do NOT redirect these:** taking a NEW booking; collecting their phone for a booking in progress; and **when the client says they "filled the form", "submitted the form", "paid", or "sent the deposit"** → this is the active booking flow, NOT a pre-existing booking. Do NOT send the WhatsApp/Instagram redirect for these. Instead ask for the **phone number they used in the form** and call `link_contact` to connect this chat and confirm their status.',
-    '- **New bookings and general enquiries are perfectly fine here** — proceed normally. The redirect above is ONLY for CHANGING or LOOKING UP a booking they made earlier (reschedule, cancel, "when/where is my appointment", past sessions).',
+    'APPOINTMENTS & PERSONAL INFO (website — owner-approved to answer here). **Do NOT redirect to WhatsApp or Instagram for any of this** — help them right here on this chat:',
+    '- **"When is my appointment?" / "Do I have a booking?" / "What time am I booked?" / appointment details** → ask for the **phone number they booked with**, then call `lookup_appointment` with it and tell them their appointment **date & time** from the result. Never refuse and never redirect — just look it up and answer here.',
+    '- **To CHANGE a booking (reschedule / cancel):** do not do it yourself. Say warmly: *"I have flagged this for JT — she will reach out to you personally to help with that 💛."* (Do NOT paste WhatsApp/Instagram links.)',
+    '- **"I already filled the form / paid / sent the deposit"** → ask for the **phone number they used in the form** and call `link_contact` to connect this chat and confirm their status.',
+    '- Never invent an appointment. If `lookup_appointment` finds nothing, follow its `instruction` (tell them no booking was found under that number, and offer to help them book).',
   ].join('\n')
 }
 
@@ -233,7 +233,7 @@ function clientRoutingLine(type) {
     return 'CLIENT TYPE = **NEW LEAD** — run the new-lead flow below.'
   }
   const label = { package: 'PACKAGE CLIENT', active_booking: 'CLIENT WITH AN ACTIVE BOOKING', returning: 'RETURNING CLIENT' }[type] || 'EXISTING CLIENT'
-  return `🛑 CLIENT TYPE = **${label}** — NOT a new lead. **This phase handles NEW LEADS ONLY. This overrides everything below.** Do NOT run the lead flow, do NOT collect their details, do NOT send the booking link, do NOT discuss availability, and do NOT book/reschedule/cancel anything. Reply warmly and briefly, then hand off with exactly: *"JT will reach out to you personally as soon as she is available 💛"* — the team is notified. You may still answer a simple general FAQ (hours, location) if they ask, but always close with that handoff line.`
+  return `🛑 CLIENT TYPE = **${label}** — NOT a new lead. **This phase handles NEW LEADS ONLY.** Do NOT run the new-lead booking flow, do NOT send the booking link, and do NOT book/reschedule/cancel. **EXCEPTIONS you SHOULD still do here:** (a) answer simple FAQs (hours, location, prices); (b) if they ask **when/what their appointment is**, ask their phone and use \`lookup_appointment\` to tell them the date & time. For anything beyond that (a new booking, changing a booking, package/returning-specific help), reply warmly and hand off: *"JT will reach out to you personally as soon as she is available 💛"* (the team is notified).`
 }
 
 // Assemble the full system prompt for one turn.

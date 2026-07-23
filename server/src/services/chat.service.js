@@ -4,7 +4,7 @@ import { buildSystemPrompt } from '../lib/prompts.js'
 import { searchKnowledge } from './knowledge.service.js'
 import { getContact, findOrCreateContact } from './contacts.service.js'
 import { extractAndSave } from './extraction.service.js'
-import { linkContactByPhone } from './booking.service.js'
+import { linkContactByPhone, lookupAppointmentByPhone } from './booking.service.js'
 import { ghlEnabled, getContactTags } from './ghl.service.js'
 import {
   getConversation,
@@ -38,11 +38,24 @@ const TOOLS = [
       required: ['phone'],
     },
   },
+  {
+    name: 'lookup_appointment',
+    description:
+      "Look up a customer's existing/upcoming appointment by their phone number so you can tell them the date and time right here on the website. Use this whenever they ask 'when is my appointment', 'do I have a booking', 'what time am I booked', or want their appointment details — take the phone number they booked with and pass it here. Read-only: it never reschedules or cancels.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        phone: { type: 'string', description: 'The phone number they booked with.' },
+      },
+      required: ['phone'],
+    },
+  },
 ]
 
 async function runTool(name, input = {}, ctx = {}) {
   if (name === 'link_contact')
     return linkContactByPhone({ contact: ctx.contact, phone: input.phone, name: input.name, email: input.email })
+  if (name === 'lookup_appointment') return lookupAppointmentByPhone({ phone: input.phone })
   return { error: 'unknown_tool' }
 }
 
