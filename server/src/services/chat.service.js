@@ -2,10 +2,10 @@ import { anthropic, textOf } from '../lib/anthropic.js'
 import { config } from '../config/env.js'
 import { buildSystemPrompt, classifyContact } from '../lib/prompts.js'
 import { searchKnowledge } from './knowledge.service.js'
-import { getContact, findOrCreateContact } from './contacts.service.js'
+import { getContact, findOrCreateContact, updateContact } from './contacts.service.js'
 import { extractAndSave } from './extraction.service.js'
 import { linkContactByPhone, lookupAppointmentByPhone, getUpcomingAppointment } from './booking.service.js'
-import { ghlEnabled, getContactTags } from './ghl.service.js'
+import { ghlEnabled, getContactTags, getContactByPhone } from './ghl.service.js'
 import {
   getConversation,
   createConversation,
@@ -70,6 +70,18 @@ function toAnthropicMessages(history) {
   return mapped
 }
 
+// Pull the first plausible phone number out of free text (chat history). Matches
+// a 10–13 digit run allowing spaces, dashes, dots, brackets and a leading +.
+// Used to identify returning / active-booking clients from what they type.
+function findPhone(text) {
+  const matches = String(text || '').match(/\+?\d[\d\s().-]{8,}\d/g) || []
+  for (const m of matches) {
+    const digits = m.replace(/\D/g, '')
+    if (digits.length >= 10 && digits.length <= 13) return digits
+  }
+  return null
+}
+
 // Shared setup: resolve contact + conversation, persist the user message, gather
 // context, and build the system prompt + message list.
 async function prepareTurn({ conversationId, text, visitor = {}, channel = 'website' }) {
@@ -85,17 +97,48 @@ async function prepareTurn({ conversationId, text, visitor = {}, channel = 'webs
 
   await addMessage(conversation.id, 'user', message)
 
-  const [history, knowledge, ghlTags] = await Promise.all([
-    getRecentMessages(conversation.id, config.chat.historyLimit),
+  const history = await getRecentMessages(conversation.id, config.chat.historyLimit)
+
+  // ── Resolve the visitor's GHL identity ───────────────────────────────────
+  // A website visitor is anonymous until we know their phone, so a returning /
+  // active-booking client would otherwise ALWAYS look like a brand-new lead and
+  // get lead answers. The moment we have a phone — passed by the widget, already
+  // on the Supabase contact, or typed into the chat (and on WhatsApp the platform
+  // gives it) — look them up in GHL, cache the id on the contact, and load their
+  // real tags so the correct module runs (active-booking support vs. lead flow).
+  let ghlContactId = contact?.ghl_contact_id || null
+  if (!ghlContactId && ghlEnabled()) {
+    const phone =
+      visitor.phone ||
+      contact?.phone ||
+      findPhone(history.filter((m) => m.role === 'user').map((m) => m.content).join('  '))
+    if (phone) {
+      const gc = await getContactByPhone(phone)
+      if (gc?.id) {
+        ghlContactId = gc.id
+        const ghlName =
+          gc.contactName || [gc.firstName, gc.lastName].filter(Boolean).join(' ').trim() || null
+        contact = { ...contact, ghl_contact_id: gc.id, name: contact?.name || ghlName }
+        // Cache on the Supabase record so later turns skip the lookup (best-effort).
+        updateContact(contact.id, {
+          ghl_contact_id: gc.id,
+          name: contact.name || ghlName,
+          phone: contact.phone || gc.phone || phone,
+        }).catch(() => {})
+      }
+    }
+  }
+
+  const [knowledge, ghlTags] = await Promise.all([
     searchKnowledge(message),
-    contact?.ghl_contact_id && ghlEnabled() ? getContactTags(contact.ghl_contact_id) : Promise.resolve([]),
+    ghlContactId && ghlEnabled() ? getContactTags(ghlContactId) : Promise.resolve([]),
   ])
 
   // For active-booking clients, pull their upcoming appointment fresh (read-only)
   // so the support module can greet with the date/time + fast-help window.
   let appointment = null
-  if (contact?.ghl_contact_id && ghlEnabled() && classifyContact(ghlTags, contact) === 'active_booking') {
-    appointment = await getUpcomingAppointment(contact.ghl_contact_id)
+  if (ghlContactId && ghlEnabled() && classifyContact(ghlTags, contact) === 'active_booking') {
+    appointment = await getUpcomingAppointment(ghlContactId)
   }
 
   const system = buildSystemPrompt({ contact, knowledge, channel, ghlTags, appointment })
