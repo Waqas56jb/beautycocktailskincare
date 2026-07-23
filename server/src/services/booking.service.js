@@ -342,6 +342,33 @@ export async function linkContactByPhone({ contact, phone, name, email }) {
   }
 }
 
+// Sortable "YYYY-MM-DD HH:MM" key from a naive GHL appointment datetime string.
+function naiveKey(s) {
+  const m = String(s || '').match(/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/)
+  return m ? `${m[1]}-${m[2]}-${m[3]} ${m[4]}:${m[5]}` : ''
+}
+
+// "Now" in the studio's timezone as the same sortable key, for comparison.
+function nowStudioKey() {
+  const p = new Intl.DateTimeFormat('en-CA', {
+    timeZone: config.ghl.timezone,
+    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false,
+  }).formatToParts(new Date())
+  const g = (t) => p.find((x) => x.type === t)?.value || '00'
+  return `${g('year')}-${g('month')}-${g('day')} ${g('hour') === '24' ? '00' : g('hour')}:${g('minute')}`
+}
+
+// Friendly display of a naive studio-local datetime — NO timezone conversion.
+function fmtNaive(s) {
+  const m = String(s || '').match(/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/)
+  if (!m) return String(s || '')
+  const [, y, mo, d, hh, mi] = m.map(Number)
+  const wd = WEEKDAYS[new Date(Date.UTC(y, mo - 1, d)).getUTCDay()]
+  const ampm = hh < 12 ? 'AM' : 'PM'
+  const h12 = ((hh + 11) % 12) + 1
+  return `${wd}, ${MONTHS[mo - 1]} ${d} at ${h12}:${String(mi).padStart(2, '0')} ${ampm}`
+}
+
 // Look up a customer's upcoming appointment by phone so the bot can tell them the
 // date/time right here on the website (owner: give appointment details on the site,
 // do NOT redirect to WhatsApp/Instagram). Read-only — never reschedules/cancels.
@@ -353,22 +380,26 @@ export async function lookupAppointmentByPhone({ phone } = {}) {
     const contact = await getContactByPhone(clean)
     if (!contact?.id) return { ok: true, found: false, instruction: `No contact found under ${clean}. Tell them you could not find a booking under that number, ask them to double-check the number they booked with, and offer to help them book a new facial + consultation.` }
 
-    const now = Date.now()
+    // GHL /contacts/appointments returns a NAIVE datetime already in the studio's
+    // local (Vancouver) time, e.g. "2026-07-10 17:30:00" — no offset. Parsing it
+    // with `new Date()` would misread it as server-local time, so compare and
+    // format it as a plain wall-clock string instead (no timezone conversion).
+    const nowKey = nowStudioKey()
     const upcoming = (await getContactAppointments(contact.id))
-      .filter((a) => a.start && new Date(a.start).getTime() >= now - 3600000)
-      .sort((a, b) => new Date(a.start) - new Date(b.start))
+      .filter((a) => naiveKey(a.start) && naiveKey(a.start) >= nowKey)
+      .sort((a, b) => naiveKey(a.start).localeCompare(naiveKey(b.start)))
       .slice(0, 3)
 
     if (!upcoming.length) return { ok: true, found: false, name: contact.firstName, instruction: `Found their contact but NO upcoming appointment. Tell them there is no upcoming booking under ${clean}, and offer to help them book one.` }
 
-    const fmt = (iso) => new Intl.DateTimeFormat('en-US', { timeZone: config.ghl.timezone, weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(iso))
-    const list = upcoming.map((a) => ({ when: fmt(a.start), title: a.title || 'appointment', status: a.status || '' }))
+    const list = upcoming.map((a) => ({ when: fmtNaive(a.start), status: a.status || '' }))
+    const whenList = list.map((a) => a.when).join('; and ')
     return {
       ok: true,
       found: true,
       name: contact.firstName || null,
       appointments: list,
-      instruction: `Give them their upcoming appointment details warmly and clearly right here: ${list.map((a) => `${a.title} on ${a.when}${a.status ? ` (${a.status})` : ''}`).join('; ')}. Do NOT reschedule or cancel yourself — if they want a change, say you've flagged it for JT who will reach out to help. Do NOT redirect them to WhatsApp/Instagram.`,
+      instruction: `They HAVE an upcoming appointment. Tell them warmly and clearly, right here, that their appointment is on **${whenList}** (use the client's first name "${contact.firstName || ''}" if you have it). Do NOT read out any internal title/name/phone from the record — just the date & time. Do NOT reschedule or cancel yourself — if they want a change, say you've flagged it for JT who will reach out to help. Do NOT redirect them to WhatsApp/Instagram.`,
     }
   } catch {
     return { ok: false, instruction: 'Warmly say our team will confirm their appointment details shortly. Do NOT mention any technical error, and do NOT redirect them to WhatsApp or Instagram.' }
