@@ -109,9 +109,18 @@ export const config = {
   meta: {
     accessToken: process.env.META_ACCESS_TOKEN || '',
     accountId: process.env.META_ACCOUNT_ID || '',
+    appId: process.env.META_APP_ID || '',
     verifyToken: process.env.META_VERIFY_TOKEN || '',
     appSecret: process.env.META_APP_SECRET || '',
     graphVersion: process.env.META_GRAPH_VERSION || 'v21.0',
     graphBase: process.env.META_GRAPH_BASE || 'https://graph.facebook.com',
+  },
+
+  // WhatsApp Cloud API (same Meta app + access token as IG; different send API).
+  whatsapp: {
+    businessAccountId: process.env.WHATSAPP_BUSINESS_ACCOUNT_ID || '',
+    // The WhatsApp number's Phone Number ID — required to send. Messages go to
+    // POST /{phoneNumberId}/messages with messaging_product: 'whatsapp'.
+    phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID || '',
   },
 }

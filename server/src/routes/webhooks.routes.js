@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { config } from '../config/env.js'
 import { processMetaWebhook } from '../services/instagram.service.js'
+import { processWhatsAppWebhook } from '../services/whatsapp.service.js'
 import { handleMissedCall, handleInboundSms } from '../services/sms.service.js'
 
 const router = Router()
@@ -23,11 +24,17 @@ router.get('/meta', (req, res) => {
   return res.sendStatus(403)
 })
 
-// POST /webhooks/meta — incoming Instagram/Messenger events.
-// We process inline then 200 (serverless-safe); Meta tolerates a few seconds.
+// POST /webhooks/meta — incoming events. The SAME Meta app + webhook URL delivers
+// both Instagram DMs and WhatsApp messages; they have different payload shapes, so
+// dispatch by `object`. We process inline then 200 (serverless-safe); Meta
+// tolerates a few seconds.
 router.post('/meta', async (req, res) => {
   try {
-    await processMetaWebhook(req.body)
+    if (req.body?.object === 'whatsapp_business_account') {
+      await processWhatsAppWebhook(req.body)
+    } else {
+      await processMetaWebhook(req.body) // instagram / messenger
+    }
   } catch (err) {
     console.error('meta webhook error:', err.message)
   }
