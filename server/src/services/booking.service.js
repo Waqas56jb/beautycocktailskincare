@@ -379,9 +379,10 @@ export async function getUpcomingAppointment(contactId) {
     .sort((x, y) => naiveKey(x.start).localeCompare(naiveKey(y.start)))[0]
   if (!a) return null
 
-  // Both the appointment (naive Pacific) and "now" (Pacific) are compared as
-  // wall-clock via Date.UTC so the minute-difference is correct without TZ math.
-  let fastHelp = false
+  // Minutes until the appointment: compare the appointment (naive Pacific) and
+  // "now" (Pacific) as wall-clock via Date.UTC so the difference is correct
+  // without TZ math. Drives fast-help AND the cancel/reschedule policy windows.
+  let minsUntil = null
   const m = String(a.start).match(/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/)
   if (m) {
     const [, y, mo, d, hh, mi] = m.map(Number)
@@ -389,10 +390,21 @@ export async function getUpcomingAppointment(contactId) {
     const p = new Intl.DateTimeFormat('en-CA', { timeZone: config.ghl.timezone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(new Date())
     const g = (t) => Number(p.find((x) => x.type === t)?.value || 0)
     const nowMs = Date.UTC(g('year'), g('month') - 1, g('day'), g('hour') === 24 ? 0 : g('hour'), g('minute'))
-    const minsUntil = (apptMs - nowMs) / 60000
-    fastHelp = minsUntil <= 30 && minsUntil >= -60 // within 30 min before → up to 1 hr after start
+    minsUntil = Math.round((apptMs - nowMs) / 60000)
   }
-  return { when: fmtNaive(a.start), status: a.status || '', fastHelp }
+  const fastHelp = minsUntil != null && minsUntil <= 30 && minsUntil >= -60 // within 30 min before → up to 1 hr after start
+  return {
+    when: fmtNaive(a.start),
+    status: a.status || '',
+    fastHelp,
+    minsUntil,
+    hoursUntil: minsUntil != null ? Math.floor(minsUntil / 60) : null,
+    // Policy windows straight from the Terms so the bot decides, never guesses:
+    // reschedule (deposit carries over) needs 12+ hrs notice; cancel-and-rebook
+    // without a new deposit needs 24+ hrs notice.
+    rescheduleWindowOpen: minsUntil != null ? minsUntil >= 12 * 60 : null,
+    cancelWindowOpen: minsUntil != null ? minsUntil >= 24 * 60 : null,
+  }
 }
 
 // Look up a customer's upcoming appointment by phone so the bot can tell them the
