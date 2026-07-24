@@ -37,6 +37,9 @@ app.get('/health', (req, res) =>
     ghl: Boolean(config.ghl.apiKey && config.ghl.locationId),
     ghlCalendars: Boolean(config.ghl.calendars.facial && config.ghl.calendars.wax),
     meta: Boolean(config.meta.accessToken),
+    metaAppId: Boolean(config.meta.appId),
+    whatsapp: Boolean(config.meta.accessToken && config.whatsapp.phoneNumberId),
+    whatsappPhoneId: Boolean(config.whatsapp.phoneNumberId),
   }),
 )
 
