@@ -209,20 +209,26 @@ export async function deleteContact(contactId) {
   return ghlFetch(`/contacts/${contactId}`, { method: 'DELETE' })
 }
 
-// ── SMS (LC Phone / Twilio via GHL) ──────────────────────────────────────────
-// Send an SMS to a contact through GHL's conversations API. Requires the GHL
-// location to have a phone number provisioned (LC Phone or Twilio). Best-effort.
-export async function sendSms({ contactId, message }) {
+// ── Outbound messages via GHL conversations API ──────────────────────────────
+// Send a message back to a contact THROUGH GHL, which delivers it on the right
+// channel (GHL owns the WhatsApp/Instagram/SMS connection). `type` is GHL's
+// channel code: 'SMS' | 'WhatsApp' | 'IG' | 'FB' | 'Email' | 'Live_Chat'.
+// Requires the location to have that channel connected. Best-effort.
+export async function sendGhlMessage({ contactId, conversationId, message, type = 'WhatsApp' }) {
   if (!ghlEnabled() || !contactId || !message) return { skipped: true }
+  const body = { type, contactId, message }
+  if (conversationId) body.conversationId = conversationId
   try {
-    return await ghlFetch('/conversations/messages', {
-      method: 'POST',
-      body: { type: 'SMS', contactId, message },
-    })
+    return await ghlFetch('/conversations/messages', { method: 'POST', body })
   } catch (e) {
-    console.error('sendSms failed:', e.status, e.message)
+    console.error('sendGhlMessage failed:', e.status, e.message, JSON.stringify(e.data || {}))
     return { error: e.message, status: e.status }
   }
+}
+
+// Backwards-compatible SMS helper (missed-call text-back flow).
+export async function sendSms({ contactId, message }) {
+  return sendGhlMessage({ contactId, message, type: 'SMS' })
 }
 
 export const CALENDARS = calendars

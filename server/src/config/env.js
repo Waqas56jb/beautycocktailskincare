@@ -86,6 +86,9 @@ export const config = {
   ghl: {
     apiKey: process.env.GHL_API_KEY || '',
     locationId: process.env.GHL_LOCATION_ID || '',
+    // Secret GHL sends in the Authorization header when it POSTs inbound
+    // WhatsApp/Instagram/SMS messages to /webhooks/ghl/inbound (empty = no auth).
+    inboundSecret: process.env.GHL_INBOUND_SECRET || '',
     timezone: process.env.GHL_TIMEZONE || 'America/Vancouver',
     calendars: {
       facial: process.env.GHL_CALENDAR_FACIAL || '',
