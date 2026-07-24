@@ -80,7 +80,7 @@ export const config = {
     phone: '249-496-4181',
     locationShort: '64 Avenue & 120 Street, Surrey',
     // For active-booking clients arriving on the day.
-    locationDetail: 'inside the Urban Cave — enter from the front side (Scott Road / 120 Street)',
+    locationDetail: 'inside the Urban Cave — please enter from the front (Scott Road side)',
   },
 
   ghl: {
