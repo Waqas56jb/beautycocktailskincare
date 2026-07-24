@@ -6,9 +6,10 @@ here, say you'll confirm — don't guess.
 > Format each as Q → short, on-brand A. Fill the NEEDS answers with real info.
 
 ## Booking & deposit
-- **How do I book?** → Once they say they'd like to book: take their phone number,
-  confirm facial+consultation vs consultation-only, then send the booking link and
-  the deposit note. They choose their own slot on the link. (See `04`.)
+- **How do I book?** → Once they say they'd like to book: take their WhatsApp
+  number (always ask for the WhatsApp number, not just a "phone number"), confirm
+  facial+consultation vs consultation-only, then send the booking link and the
+  deposit note. They choose their own slot on the link. (See `04`.)
 - **What's available / do you have [time]?** → Don't discuss slots. → "Our booking
   link shows all our live openings — u can pick whatever suits u best 😊"
 - **Why a deposit?** → It secures your slot; it goes toward your session. Only the

@@ -311,7 +311,7 @@ export async function syncContactToGHL({ name, phone, email, concern, tags = [] 
 export async function linkContactByPhone({ contact, phone, name, email }) {
   const clean = String(phone || '').replace(/[^\d+]/g, '')
   if (!ghlEnabled()) return { linked: false, reason: 'not_connected', instruction: 'Do NOT mention any technical/connection issue. Just proceed: thank them and send the Skin Evaluation Form, reminding them to use this same number.' }
-  if (clean.length < 7) return { linked: false, reason: 'bad_phone', instruction: 'That phone number looks incomplete — politely ask them to re-send it.' }
+  if (clean.length < 7) return { linked: false, reason: 'bad_phone', instruction: 'That WhatsApp number looks incomplete — politely ask them to re-send their WhatsApp number (always say "WhatsApp number", not just "phone number").' }
   try {
     // Upsert by phone → GHL returns the EXISTING contact if this phone already has
     // one (so a form/deposit already on that contact comes back with its tags).
@@ -400,8 +400,8 @@ export async function getUpcomingAppointment(contactId) {
 // do NOT redirect to WhatsApp/Instagram). Read-only — never reschedules/cancels.
 export async function lookupAppointmentByPhone({ phone } = {}) {
   const clean = String(phone || '').replace(/[^\d+]/g, '')
-  if (!ghlEnabled()) return { ok: false, instruction: 'Take their phone number and warmly say our team will confirm their appointment details shortly. Do NOT mention any technical issue, and do NOT redirect them to WhatsApp or Instagram.' }
-  if (clean.length < 7) return { ok: false, instruction: 'That phone number looks incomplete — politely ask them to re-send the number they booked with.' }
+  if (!ghlEnabled()) return { ok: false, instruction: 'Ask for their WhatsApp number (always say "WhatsApp number", not just "phone number") and warmly say our team will confirm their appointment details shortly. Do NOT mention any technical issue, and do NOT redirect them to WhatsApp or Instagram.' }
+  if (clean.length < 7) return { ok: false, instruction: 'That WhatsApp number looks incomplete — politely ask them to re-send the WhatsApp number they booked with (always say "WhatsApp number").' }
   try {
     const contact = await getContactByPhone(clean)
     if (!contact?.id) return { ok: true, found: false, instruction: `No contact found under ${clean}. Tell them you could not find a booking under that number, ask them to double-check the number they booked with, and offer to help them book a new facial + consultation.` }

@@ -24,13 +24,13 @@ const TOOLS = [
   {
     name: 'link_contact',
     description:
-      "Connect this chat to the customer's GoHighLevel record using their phone number, and read back their live booking status (form submitted / deposit paid). Call this when you collect their phone before sending the booking link, or when they say they already filled the form/paid but you have no record of it — ask for the phone they used and pass it here.",
+      "Connect this chat to the customer's GoHighLevel record using their WhatsApp number, and read back their live booking status (form submitted / deposit paid). Call this when you collect their WhatsApp number before sending the booking link, or when they say they already filled the form/paid but you have no record of it — always ask for their WhatsApp number (not just a 'phone number') and pass it here.",
     input_schema: {
       type: 'object',
       properties: {
         phone: {
           type: 'string',
-          description: 'The phone number they will use / used in the form — ideally their WhatsApp number.',
+          description: 'Their WhatsApp number (the one they will use / used in the form). Always ask for the WhatsApp number specifically.',
         },
         name: { type: 'string', description: 'Their name, if known.' },
         email: { type: 'string', description: 'Their email, if known.' },
@@ -41,11 +41,11 @@ const TOOLS = [
   {
     name: 'lookup_appointment',
     description:
-      "Look up a customer's existing/upcoming appointment by their phone number so you can tell them the date and time right here on the website. Use this whenever they ask 'when is my appointment', 'do I have a booking', 'what time am I booked', or want their appointment details — take the phone number they booked with and pass it here. Read-only: it never reschedules or cancels.",
+      "Look up a customer's existing/upcoming appointment by their WhatsApp number so you can tell them the date and time right here on the website. Use this whenever they ask 'when is my appointment', 'do I have a booking', 'what time am I booked', or want their appointment details — always ask for the WhatsApp number they booked with (not just a 'phone number') and pass it here. Read-only: it never reschedules or cancels.",
     input_schema: {
       type: 'object',
       properties: {
-        phone: { type: 'string', description: 'The phone number they booked with.' },
+        phone: { type: 'string', description: 'Their WhatsApp number (the one they booked with). Always ask for the WhatsApp number specifically.' },
       },
       required: ['phone'],
     },
