@@ -24,7 +24,11 @@ async function ghlFetch(path, { method = 'GET', body, query } = {}) {
   const res = await fetch(url, { method, headers: headers(), body: body ? JSON.stringify(body) : undefined })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {
-    const err = new Error(data?.message || `GHL ${res.status}`)
+    // GHL error `message` is sometimes a string, sometimes a nested object
+    // ({error, status}). Flatten to a readable string (avoids "[object Object]").
+    const m = data?.message
+    const msg = typeof m === 'string' ? m : m?.error || data?.error || `GHL ${res.status}`
+    const err = new Error(msg)
     err.status = res.status
     err.data = data
     throw err

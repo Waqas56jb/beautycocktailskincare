@@ -69,20 +69,30 @@ router.post('/ghl/missed-call', async (req, res) => {
   res.sendStatus(200)
 })
 
-// POST /webhooks/ghl/inbound — GHL forwards an inbound WhatsApp / Instagram / SMS
-// message here (via a workflow "Webhook" action). We run Martini and send the
-// reply BACK through GHL, which delivers it to the customer on the same channel.
-// Auth: Authorization: Bearer <GHL_INBOUND_SECRET>.
-router.post('/ghl/inbound', async (req, res) => {
-  if (!inboundAuthorized(req)) return res.sendStatus(401)
-  try {
-    const result = await handleGhlInbound(req.body || {})
-    return res.status(200).json({ ok: true, ...result })
-  } catch (err) {
-    console.error('ghl inbound webhook error:', err.message)
-    return res.status(200).json({ ok: false, error: 'processing_failed' })
+// GHL forwards an inbound message here (via a workflow "Webhook" action). We run
+// Martini and send the reply BACK through GHL, which delivers it on the SAME
+// channel. Auth: Authorization: Bearer <GHL_INBOUND_SECRET>.
+//
+// Use the channel-specific endpoints so the reply always returns on the right
+// channel (the reply channel is decided by the URL, not by the payload):
+//   POST /webhooks/ghl/whatsapp   → reply on WhatsApp
+//   POST /webhooks/ghl/instagram  → reply on Instagram
+//   POST /webhooks/ghl/inbound    → generic (channel detected from the payload)
+function ghlInboundHandler(forcedChannel) {
+  return async (req, res) => {
+    if (!inboundAuthorized(req)) return res.sendStatus(401)
+    try {
+      const result = await handleGhlInbound(req.body || {}, forcedChannel)
+      return res.status(200).json({ ok: true, ...result })
+    } catch (err) {
+      console.error('ghl inbound webhook error:', err.message)
+      return res.status(200).json({ ok: false, error: 'processing_failed' })
+    }
   }
-})
+}
+router.post('/ghl/whatsapp', ghlInboundHandler('whatsapp'))
+router.post('/ghl/instagram', ghlInboundHandler('instagram'))
+router.post('/ghl/inbound', ghlInboundHandler(null))
 
 // POST /webhooks/ghl — inbound SMS (GHL "InboundMessage" event). We reply as the
 // bot over text. Outbound echoes and non-SMS message types are ignored.

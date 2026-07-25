@@ -27,15 +27,18 @@ function pick(body, keys) {
 
 // Handle an inbound WhatsApp/Instagram/SMS message that GHL forwarded to us.
 // We run it through Martini and send the reply BACK through GHL, which delivers
-// it to the customer on the original channel.
-export async function handleGhlInbound(body = {}) {
+// it to the customer on the SAME channel. `forcedChannel` is set by the
+// channel-specific endpoints (/ghl/whatsapp, /ghl/instagram) so the reply always
+// goes back on the right channel regardless of what the payload says; when null
+// (the generic /ghl/inbound endpoint) we detect the channel from the payload.
+export async function handleGhlInbound(body = {}, forcedChannel = null) {
   const contactId = pick(body, ['contactId', 'contact_id', 'id'])
   const text = pick(body, ['message', 'body', 'messageBody', 'message_body', 'text'])
   const phone = pick(body, ['phone', 'phoneNumber'])
   const name = pick(body, ['name', 'first_name', 'firstName', 'full_name', 'fullName'])
   const conversationId = pick(body, ['conversationId', 'conversation_id'])
   const { channel, ghlType } = normalizeChannel(
-    pick(body, ['channel', 'messageType', 'message_type', 'type']),
+    forcedChannel || pick(body, ['channel', 'messageType', 'message_type', 'type']),
   )
 
   const message = String(text || '').trim()
