@@ -41,7 +41,7 @@ const TOOLS = [
   {
     name: 'lookup_appointment',
     description:
-      "Look up a customer's existing/upcoming appointment by their WhatsApp number so you can tell them the date and time right here on the website. Use this whenever they ask 'when is my appointment', 'do I have a booking', 'what time am I booked', or want their appointment details — always ask for the WhatsApp number they booked with (not just a 'phone number') and pass it here. Read-only: it never reschedules or cancels.",
+      "Look up a customer's EXISTING/upcoming appointment by their WhatsApp number. Use this ONLY when they explicitly ask about an appointment they already have — 'when is my appointment', 'do I have a booking', 'what time am I booked'. ⚠️ Do NOT use this when they want to MAKE a new booking ('book me', 'I want to book', 'can I book', or 'yes' after you offered to book) — that is a NEW booking: send the booking link instead, do not look anything up. Do not call this repeatedly for the same number. Read-only: it never reschedules or cancels.",
     input_schema: {
       type: 'object',
       properties: {

@@ -102,15 +102,21 @@ function leadFlowLine() {
 }
 
 // BOOKING — link only. The bot never books, reschedules or cancels.
-function bookingLine() {
+function bookingLine(channel) {
   const link = config.booking.linkUrl
   const dep = config.booking.depositAmount
   const consult = config.prices.consultationOnly
+  // On WhatsApp/Instagram/SMS the person is already identified by their account,
+  // so we always have their number — never ask for it there.
+  const numberKnown = channel === 'whatsapp' || channel === 'instagram' || channel === 'sms'
   return [
     'BOOKING — **you NEVER book, reschedule or cancel anything yourself.** There is NO availability check, NO time slots, NO dates and NO intake form in this chat. The GHL calendar link handles all of that.',
+    '- **BOOKING INTENT** — "book me", "I want to book", "book an appointment", "can I book", or **"yes"** after you offered to help them book = they want a **NEW** booking. Go STRAIGHT to the booking flow and send the calendar link. **⚠️ This is NOT an appointment-status check — NEVER call `lookup_appointment` for a booking request.** (`lookup_appointment` is ONLY for "when is MY appointment / do I have a booking".) Never keep repeating "no booking found" to someone who is trying to BOOK — just send the link.',
     '- **⚠️ NEVER ask for or offer availability, dates, or time slots.** Do not ask "what day works for you?", do not suggest times, do not discuss specific openings. If they ask about availability, tell them the booking link shows all live openings — then follow the rules below.',
-    '- **RULE 1 — Send the booking link ONLY if they say they want to book.** Never send it unprompted.',
-    '- **RULE 2 — You MUST have their WhatsApp number BEFORE sending the booking link** (GHL uses it to connect their booking to this chat). **Always ask specifically for their WhatsApp number — never just say "phone number".** If you do not have it yet, ask: *"Perfect! Can I grab ur WhatsApp number first so we can connect ur booking to this chat? 😊"* — wait for it, then call `link_contact` with it. **If you already have their number (KNOWN_CONTACT or earlier in this chat), skip this and do NOT re-ask.**',
+    '- **RULE 1 — Send the booking link ONLY if they say they want to book** (see BOOKING INTENT). Never send it unprompted.',
+    numberKnown
+      ? '- **RULE 2 — You ALREADY have their number on this channel** (WhatsApp/Instagram identifies them). **Do NOT ask for their WhatsApp number here, and do NOT call `link_contact`** — go straight to confirming the service (RULE 3) and sending the link.'
+      : '- **RULE 2 — You MUST have their WhatsApp number BEFORE sending the booking link** (GHL uses it to connect their booking to this chat). **Always ask specifically for their WhatsApp number — never just say "phone number".** If you do not have it yet, ask: *"Perfect! Can I grab ur WhatsApp number first so we can connect ur booking to this chat? 😊"* — wait for it, then call `link_contact` with it. **If you already have their number (KNOWN_CONTACT or earlier in this chat), skip this and do NOT re-ask.**',
     `- **RULE 3 — Confirm WHICH service, but do NOT repeat the full options list twice.** If it is already clear (they said "facial" / "facial + consultation"), skip straight to the link. If you ALREADY listed the two options earlier in the chat, just ask short: *"Which one would you like to go for? 😊"* — do NOT re-spell the prices/bullets again. Only spell out the full options (Consultation only $${consult}/20 min · Facial + consultation, consultation FREE) the FIRST time they come up.`,
     `- **THEN send the booking link as a CLICKABLE markdown link** — never paste the bare URL (it renders as dead plain text). Always write it exactly in this form: *"Here is our booking link — select Facial + Consultation, fill in ur form, and choose ur slot. It is easy! If any questions, let me know 💛  [**Book your appointment here**](${link})"* Use that exact URL inside the parentheses — never invent another link.`,
     `- **RULE 4 — ALWAYS follow the booking link with this deposit note (never skip it):** *"Just a heads up — even if u add other services or add-ons, when asked at checkout, u only pay the $${dep} deposit. The rest we can do in person 😊"*`,
@@ -162,7 +168,11 @@ function ghlTagsLine(tags) {
 
 function securityLine(channel) {
   if (channel === 'instagram' || channel === 'whatsapp' || channel === 'sms') {
-    return 'SECURITY: This is a verified channel (the person is identified by their platform account or phone number) — you MAY handle reschedule / cancel / booking-status / past-session requests directly.'
+    return [
+      'SECURITY: This is a verified channel (identified by their WhatsApp/Instagram account) — you MAY handle reschedule / cancel / booking-status / past-session requests directly, and you ALREADY have their number (never ask for it).',
+      '- **`lookup_appointment` is ONLY for an EXISTING appointment** — when they explicitly ask "when is my appointment", "do I have a booking", "what time am I booked". **Do NOT call it for "book me" / "I want to book" / "yes I want to book"** — those are NEW bookings → send the booking link instead.',
+      '- **Never loop.** If a lookup found no appointment, do NOT keep re-checking the same number on every reply. Move the conversation forward (offer the booking link once).',
+    ].join('\n')
   }
   return [
     'APPOINTMENTS & PERSONAL INFO (website — owner-approved to answer here). **Do NOT redirect to WhatsApp or Instagram for any of this** — help them right here on this chat:',
@@ -313,7 +323,7 @@ export function buildSystemPrompt({ contact, knowledge, channel, ghlTags, appoin
     `CURRENT DATE & TIME — studio local (America/Vancouver): ${currentDateTime()}`,
     toneLine(channel),
     leadFlowLine(),
-    bookingLine(),
+    bookingLine(channel),
     handoffLine(),
     securityLine(channel),
     servicePricingLine(),
