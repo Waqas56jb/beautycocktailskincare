@@ -53,7 +53,17 @@ export async function handleGhlInbound(body = {}) {
   if (contact && Object.keys(patch).length) await updateContact(contact.id, patch).catch(() => {})
 
   const { reply } = await handleChat({ conversationId: conv.id, text: message, channel })
-  if (reply) await sendGhlMessage({ contactId, conversationId, message: reply, type: ghlType })
 
-  return { replied: Boolean(reply), channel, conversationId: conv.id }
+  // Two delivery paths (either works):
+  //  1) We push the reply straight to GHL (needs the Conversations Messages scope
+  //     on the token). Result is reported in `sent` for debugging.
+  //  2) GHL's workflow reads `reply` from THIS response and sends it with a
+  //     native "Send Message" action — no extra token scope required.
+  let sent = { skipped: 'no_reply' }
+  if (reply) {
+    sent = await sendGhlMessage({ contactId, conversationId, message: reply, type: ghlType })
+    if (sent?.error) console.error('GHL reply send failed:', sent.status, sent.error)
+  }
+
+  return { replied: Boolean(reply), reply: reply || null, channel, conversationId: conv.id, sent }
 }
