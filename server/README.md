@@ -2,12 +2,12 @@
 
 Node.js + Express API that powers the Martini chatbot. Loads the modular prompt
 framework in [`prompts/`](prompts/), stores memory + conversations in Supabase,
-and generates replies with Claude (Anthropic).
+and generates replies with OpenAI.
 
 ## Stack
 - **Express** (ESM) — HTTP API
-- **Claude (Anthropic)** — the bot's LLM (`claude-opus-4-8`); answers from the
-  prompt modules (no external embeddings/RAG)
+- **OpenAI** — the bot's LLM (`gpt-4o`); answers from the prompt modules (no
+  external embeddings/RAG)
 - **Supabase (Postgres)** — contacts (memory), conversations, messages,
   follow-ups
 
@@ -21,7 +21,7 @@ npm run dev               # http://localhost:4000  (auto-reloads)
 ```
 
 ## Environment (`.env`)
-See `.env.example`. Key vars: `ANTHROPIC_API_KEY`, `SUPABASE_URL`,
+See `.env.example`. Key vars: `OPENAI_API_KEY`, `SUPABASE_URL`,
 `SUPABASE_SECRET_KEY` (server-only, bypasses RLS), `DATABASE_URL` (migrations),
 `CLIENT_ORIGINS` (CORS allow-list for the widget + admin).
 
@@ -59,7 +59,7 @@ sends the logged-in user's token).
 2. Persist the user message
 3. Fetch recent history + the contact's live GHL tags
 4. Assemble the system prompt from `prompts/01..19` + runtime context
-5. Call Claude, persist the reply, return it
+5. Call OpenAI, persist the reply, return it
 
 ## Next steps
 - Create an **admin user** in Supabase → Authentication (to log into the panel).

@@ -19,7 +19,7 @@ calendar ID(s), custom-field IDs, deposit/payment verification method.
 - App database of record for conversations, messages, leads, and memory
   summaries. Server uses the **service_role** key.
 
-## Claude (Anthropic)
+## OpenAI
 - The LLM for all of Martini's responses. The bot answers from its prompt
   modules (no external embeddings/RAG).
 

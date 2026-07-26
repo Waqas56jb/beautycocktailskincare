@@ -21,11 +21,15 @@ export const config = {
     .map((s) => s.trim())
     .filter(Boolean),
 
-  // Claude powers the chatbot.
-  anthropic: {
-    apiKey: required('ANTHROPIC_API_KEY'),
-    model: process.env.ANTHROPIC_MODEL || 'claude-opus-4-8',
-    maxTokens: Number(process.env.ANTHROPIC_MAX_TOKENS) || 700,
+  // OpenAI powers the chatbot.
+  openai: {
+    apiKey: required('OPENAI_API_KEY'),
+    // gpt-4o follows the detailed prompt (booking-intent, tag routing) reliably;
+    // gpt-4o-mini is cheaper but less consistent on the nuanced rules.
+    model: process.env.OPENAI_MODEL || 'gpt-4o',
+    maxTokens: Number(process.env.OPENAI_MAX_TOKENS) || 700,
+    // Lower = more consistent (good for a business bot). "0" is respected.
+    temperature: process.env.OPENAI_TEMPERATURE ? Number(process.env.OPENAI_TEMPERATURE) : 0.4,
   },
 
   supabase: {

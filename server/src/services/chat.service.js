@@ -1,4 +1,4 @@
-import { anthropic, textOf } from '../lib/anthropic.js'
+import { openai, textOf } from '../lib/openai.js'
 import { config } from '../config/env.js'
 import { buildSystemPrompt, classifyContact } from '../lib/prompts.js'
 import { searchKnowledge } from './knowledge.service.js'
@@ -22,36 +22,43 @@ const EMPTY_REPLY = "I didn't quite catch that 💛 Could you type your message 
 const ERROR_REPLY =
   "Sorry, I'm having a little trouble right now — please try again in a moment, or leave your details and our team will follow up. 💛"
 
-// Tools Claude can call. Anthropic uses `input_schema` (OpenAI used `parameters`),
-// and the tool call arrives as a `tool_use` block whose `input` is already parsed.
+// Tools the model can call (OpenAI function-calling format). A tool call arrives
+// as `message.tool_calls[]` whose `function.arguments` is a JSON STRING — we
+// JSON.parse it before dispatching to runTool.
 const TOOLS = [
   {
-    name: 'link_contact',
-    description:
-      "Connect this chat to the customer's GoHighLevel record using their WhatsApp number, and read back their live booking status (form submitted / deposit paid). Call this when you collect their WhatsApp number before sending the booking link, or when they say they already filled the form/paid but you have no record of it — always ask for their WhatsApp number (not just a 'phone number') and pass it here.",
-    input_schema: {
-      type: 'object',
-      properties: {
-        phone: {
-          type: 'string',
-          description: 'Their WhatsApp number (the one they will use / used in the form). Always ask for the WhatsApp number specifically.',
+    type: 'function',
+    function: {
+      name: 'link_contact',
+      description:
+        "Connect this chat to the customer's GoHighLevel record using their WhatsApp number, and read back their live booking status (form submitted / deposit paid). Call this when you collect their WhatsApp number before sending the booking link, or when they say they already filled the form/paid but you have no record of it — always ask for their WhatsApp number (not just a 'phone number') and pass it here.",
+      parameters: {
+        type: 'object',
+        properties: {
+          phone: {
+            type: 'string',
+            description: 'Their WhatsApp number (the one they will use / used in the form). Always ask for the WhatsApp number specifically.',
+          },
+          name: { type: 'string', description: 'Their name, if known.' },
+          email: { type: 'string', description: 'Their email, if known.' },
         },
-        name: { type: 'string', description: 'Their name, if known.' },
-        email: { type: 'string', description: 'Their email, if known.' },
+        required: ['phone'],
       },
-      required: ['phone'],
     },
   },
   {
-    name: 'lookup_appointment',
-    description:
-      "Look up a customer's EXISTING/upcoming appointment by their WhatsApp number. Use this ONLY when they explicitly ask about an appointment they already have — 'when is my appointment', 'do I have a booking', 'what time am I booked'. ⚠️ Do NOT use this when they want to MAKE a new booking ('book me', 'I want to book', 'can I book', or 'yes' after you offered to book) — that is a NEW booking: send the booking link instead, do not look anything up. Do not call this repeatedly for the same number. Read-only: it never reschedules or cancels.",
-    input_schema: {
-      type: 'object',
-      properties: {
-        phone: { type: 'string', description: 'Their WhatsApp number (the one they booked with). Always ask for the WhatsApp number specifically.' },
+    type: 'function',
+    function: {
+      name: 'lookup_appointment',
+      description:
+        "Look up a customer's EXISTING/upcoming appointment by their WhatsApp number. Use this ONLY when they explicitly ask about an appointment they already have — 'when is my appointment', 'do I have a booking', 'what time am I booked'. ⚠️ Do NOT use this when they want to MAKE a new booking ('book me', 'I want to book', 'can I book', or 'yes' after you offered to book) — that is a NEW booking: send the booking link instead, do not look anything up. Do not call this repeatedly for the same number. Read-only: it never reschedules or cancels.",
+      parameters: {
+        type: 'object',
+        properties: {
+          phone: { type: 'string', description: 'Their WhatsApp number (the one they booked with). Always ask for the WhatsApp number specifically.' },
+        },
+        required: ['phone'],
       },
-      required: ['phone'],
     },
   },
 ]
@@ -63,15 +70,21 @@ async function runTool(name, input = {}, ctx = {}) {
   return { error: 'unknown_tool' }
 }
 
-// Map stored history to Anthropic messages. Claude takes the system prompt as a
-// SEPARATE parameter (never a message), only knows user/assistant roles, and
-// requires the first message to be from the user.
-function toAnthropicMessages(history) {
-  const mapped = history
+// Parse a tool call's JSON-string arguments safely.
+function parseArgs(str) {
+  try {
+    return JSON.parse(str || '{}')
+  } catch {
+    return {}
+  }
+}
+
+// Map stored history to chat messages (role + content). The system prompt is
+// prepended separately as a `system` message before each API call.
+function toChatMessages(history) {
+  return history
     .filter((m) => (m.content || '').trim())
     .map((m) => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content }))
-  while (mapped.length && mapped[0].role !== 'user') mapped.shift() // must start with user
-  return mapped
 }
 
 // Pull the first plausible phone number out of free text (chat history). Matches
@@ -168,27 +181,28 @@ async function prepareTurn({ conversationId, text, visitor = {}, channel = 'webs
     contact,
     userTexts,
     system,
-    messages: toAnthropicMessages(history),
+    messages: toChatMessages(history),
   }
 }
 
-// Run the tool-use loop: returns the final assistant message.
-async function resolveTools(first, { system, messages, tools, ctx }) {
+// Run the tool-call loop: returns the final chat-completion response.
+// `convo` includes the system message as its first entry.
+async function resolveTools(first, { convo, tools, ctx }) {
   let response = first
-  let convo = messages
-  for (let round = 0; round < 2 && response.stop_reason === 'tool_use'; round++) {
-    const toolUses = response.content.filter((b) => b.type === 'tool_use')
-    const results = []
-    for (const tu of toolUses) {
-      const result = await runTool(tu.name, tu.input, ctx)
-      results.push({ type: 'tool_result', tool_use_id: tu.id, content: JSON.stringify(result) })
+  let messages = convo
+  for (let round = 0; round < 2; round++) {
+    const choice = response.choices?.[0]
+    if (choice?.finish_reason !== 'tool_calls' || !choice.message.tool_calls?.length) break
+    messages = [...messages, choice.message] // assistant turn carrying the tool_calls
+    for (const tc of choice.message.tool_calls) {
+      const result = await runTool(tc.function.name, parseArgs(tc.function.arguments), ctx)
+      messages = [...messages, { role: 'tool', tool_call_id: tc.id, content: JSON.stringify(result) }]
     }
-    convo = [...convo, { role: 'assistant', content: response.content }, { role: 'user', content: results }]
-    response = await anthropic.messages.create({
-      model: config.anthropic.model,
-      max_tokens: config.anthropic.maxTokens,
-      system,
-      messages: convo,
+    response = await openai.chat.completions.create({
+      model: config.openai.model,
+      max_tokens: config.openai.maxTokens,
+      temperature: config.openai.temperature,
+      messages,
       tools,
     })
   }
@@ -204,34 +218,32 @@ export async function handleChat(args) {
   if (prep.superseded) return { conversationId: prep.conversationId, reply: null, superseded: true }
 
   const tools = ghlEnabled() ? TOOLS : undefined
-  // Debug: log EXACTLY what goes to Claude (set LOG_LLM_IO=1). Shows the message
-  // array (history + latest user turn) and the tail of the system prompt so we
-  // can confirm the right question + full context are being sent.
+  const convo = [{ role: 'system', content: prep.system }, ...prep.messages]
+  // Debug: log EXACTLY what goes to the model (set LOG_LLM_IO=1) — the message
+  // array (history + latest user turn) + the system-prompt tail.
   if (process.env.LOG_LLM_IO) {
-    console.log('\n───── MESSAGES → CLAUDE (' + prep.messages.length + ' turns) ─────')
+    console.log('\n───── MESSAGES → OPENAI (' + prep.messages.length + ' turns) ─────')
     console.log(JSON.stringify(prep.messages, null, 2))
     console.log('───── SYSTEM PROMPT tail ─────\n' + prep.system.slice(-600) + '\n──────────────────────────────\n')
   }
   let reply
   try {
-    // NOTE: no `temperature` — Claude Opus 4.7+ rejects sampling params (400).
-    const first = await anthropic.messages.create({
-      model: config.anthropic.model,
-      max_tokens: config.anthropic.maxTokens,
-      system: prep.system,
-      messages: prep.messages,
+    const first = await openai.chat.completions.create({
+      model: config.openai.model,
+      max_tokens: config.openai.maxTokens,
+      temperature: config.openai.temperature,
+      messages: convo,
       tools,
     })
     const final = await resolveTools(first, {
-      system: prep.system,
-      messages: prep.messages,
+      convo,
       tools,
       ctx: { contact: prep.contact, conversationId: prep.conversationId, userTexts: prep.userTexts },
     })
     reply = textOf(final) || "I'm here — could you say that again?"
-    await addMessage(prep.conversationId, 'bot', reply, { model: config.anthropic.model })
+    await addMessage(prep.conversationId, 'bot', reply, { model: config.openai.model })
   } catch (err) {
-    console.error('Claude error:', err.message)
+    console.error('OpenAI error:', err.message)
     reply = ERROR_REPLY
     await addMessage(prep.conversationId, 'bot', reply, { error: err.message })
   }
@@ -258,39 +270,55 @@ export async function* streamChat(args) {
   const ctx = { contact: prep.contact, conversationId: prep.conversationId, userTexts: prep.userTexts }
   let full = ''
   try {
-    let convo = prep.messages
+    let convo = [{ role: 'system', content: prep.system }, ...prep.messages]
     // Up to 3 passes: a tool round ends the stream, so we re-stream the follow-up.
     for (let round = 0; round < 3; round++) {
-      const stream = anthropic.messages.stream({
-        model: config.anthropic.model,
-        max_tokens: config.anthropic.maxTokens,
-        system: prep.system,
+      const stream = await openai.chat.completions.create({
+        model: config.openai.model,
+        max_tokens: config.openai.maxTokens,
+        temperature: config.openai.temperature,
         messages: convo,
         tools,
+        stream: true,
       })
-      for await (const event of stream) {
-        if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
-          full += event.delta.text
-          yield { delta: event.delta.text }
+      // OpenAI streams tool calls in fragments (partial `function.arguments`);
+      // accumulate them by index alongside any streamed text.
+      const toolCalls = []
+      let assistantText = ''
+      let finish = null
+      for await (const chunk of stream) {
+        const choice = chunk.choices?.[0]
+        if (!choice) continue
+        const d = choice.delta || {}
+        if (d.content) {
+          full += d.content
+          assistantText += d.content
+          yield { delta: d.content }
         }
+        for (const tcd of d.tool_calls || []) {
+          const i = tcd.index
+          toolCalls[i] ||= { id: '', type: 'function', function: { name: '', arguments: '' } }
+          if (tcd.id) toolCalls[i].id = tcd.id
+          if (tcd.function?.name) toolCalls[i].function.name += tcd.function.name
+          if (tcd.function?.arguments) toolCalls[i].function.arguments += tcd.function.arguments
+        }
+        if (choice.finish_reason) finish = choice.finish_reason
       }
-      const message = await stream.finalMessage()
-      if (message.stop_reason !== 'tool_use') break // final text streamed — done
+      if (finish !== 'tool_calls' || !toolCalls.length) break // final text streamed — done
 
-      const results = []
-      for (const tu of message.content.filter((b) => b.type === 'tool_use')) {
-        const result = await runTool(tu.name, tu.input, ctx)
-        results.push({ type: 'tool_result', tool_use_id: tu.id, content: JSON.stringify(result) })
+      convo = [...convo, { role: 'assistant', content: assistantText || null, tool_calls: toolCalls }]
+      for (const tc of toolCalls) {
+        const result = await runTool(tc.function.name, parseArgs(tc.function.arguments), ctx)
+        convo = [...convo, { role: 'tool', tool_call_id: tc.id, content: JSON.stringify(result) }]
       }
-      convo = [...convo, { role: 'assistant', content: message.content }, { role: 'user', content: results }]
     }
   } catch (err) {
-    console.error('Claude stream error:', err.message)
+    console.error('OpenAI stream error:', err.message)
     if (!full) yield { delta: ERROR_REPLY }
     full = full || ERROR_REPLY
   }
 
-  await addMessage(prep.conversationId, 'bot', full || '…', { model: config.anthropic.model, streamed: true })
+  await addMessage(prep.conversationId, 'bot', full || '…', { model: config.openai.model, streamed: true })
   await touchConversation(prep.conversationId)
 
   yield { done: true, conversationId: prep.conversationId }

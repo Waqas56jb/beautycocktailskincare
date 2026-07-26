@@ -1,4 +1,4 @@
-import { anthropic, textOf } from '../lib/anthropic.js'
+import { openai, textOf } from '../lib/openai.js'
 import { config } from '../config/env.js'
 import { updateContact } from './contacts.service.js'
 import { getRecentMessages } from './conversations.service.js'
@@ -33,16 +33,22 @@ export async function extractAndSave(conversationId, contact) {
       .map((m) => `${m.role === 'user' ? 'Client' : 'Martini'}: ${m.content}`)
       .join('\n')
 
-    // Claude: system prompt is a separate parameter; no `temperature` (rejected
-    // on Opus 4.7+). We ask for bare JSON and strip any code fence defensively.
-    const res = await anthropic.messages.create({
-      model: config.anthropic.model,
+    // OpenAI JSON mode guarantees a parseable object; temperature 0 for precision.
+    const res = await openai.chat.completions.create({
+      model: config.openai.model,
       max_tokens: 500,
-      system:
-        'You extract structured CRM data from a skincare-salon chat for GoHighLevel. Be precise and conservative — only report what the client actually stated. ' +
-        SCHEMA_HINT +
-        '\n\nRespond with ONLY the JSON object — no prose, no markdown code fences.',
-      messages: [{ role: 'user', content: `Transcript:\n${transcript}` }],
+      temperature: 0,
+      response_format: { type: 'json_object' },
+      messages: [
+        {
+          role: 'system',
+          content:
+            'You extract structured CRM data from a skincare-salon chat for GoHighLevel. Be precise and conservative — only report what the client actually stated. ' +
+            SCHEMA_HINT +
+            '\n\nRespond with ONLY the JSON object — no prose, no markdown code fences.',
+        },
+        { role: 'user', content: `Transcript:\n${transcript}` },
+      ],
     })
 
     const raw = textOf(res).replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim()
