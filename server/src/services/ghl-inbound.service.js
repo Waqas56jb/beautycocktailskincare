@@ -42,6 +42,14 @@ export async function handleGhlInbound(body = {}, forcedChannel = null) {
   )
 
   const message = String(text || '').trim()
+
+  // Debug: log the RAW payload GHL sent + what we extracted (set LOG_GHL_INBOUND=1),
+  // so we can confirm the real user message is arriving in the right field.
+  if (process.env.LOG_GHL_INBOUND) {
+    console.log('\n═════ GHL INBOUND RAW ═════\n' + JSON.stringify(body, null, 2))
+    console.log('extracted →', JSON.stringify({ contactId, message, phone, name, channel: forcedChannel || channel }) + '\n═══════════════════════════')
+  }
+
   if (!contactId || !message) return { skipped: 'missing_contact_or_message' }
 
   // Tie this thread to a stable Supabase conversation keyed by the GHL contact,

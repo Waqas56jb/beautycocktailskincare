@@ -204,6 +204,14 @@ export async function handleChat(args) {
   if (prep.superseded) return { conversationId: prep.conversationId, reply: null, superseded: true }
 
   const tools = ghlEnabled() ? TOOLS : undefined
+  // Debug: log EXACTLY what goes to Claude (set LOG_LLM_IO=1). Shows the message
+  // array (history + latest user turn) and the tail of the system prompt so we
+  // can confirm the right question + full context are being sent.
+  if (process.env.LOG_LLM_IO) {
+    console.log('\n───── MESSAGES → CLAUDE (' + prep.messages.length + ' turns) ─────')
+    console.log(JSON.stringify(prep.messages, null, 2))
+    console.log('───── SYSTEM PROMPT tail ─────\n' + prep.system.slice(-600) + '\n──────────────────────────────\n')
+  }
   let reply
   try {
     // NOTE: no `temperature` — Claude Opus 4.7+ rejects sampling params (400).
