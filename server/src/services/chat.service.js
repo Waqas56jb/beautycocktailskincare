@@ -14,6 +14,10 @@ import {
   touchConversation,
 } from './conversations.service.js'
 
+// Debounce window for coalescing rapid consecutive messages on messaging
+// channels (WhatsApp/Instagram) so we reply once, to the newest message.
+const COALESCE_MS = Number(process.env.COALESCE_MS) || 1500
+
 const EMPTY_REPLY = "I didn't quite catch that 💛 Could you type your message again?"
 const ERROR_REPLY =
   "Sorry, I'm having a little trouble right now — please try again in a moment, or leave your details and our team will follow up. 💛"
@@ -97,6 +101,22 @@ async function prepareTurn({ conversationId, text, visitor = {}, channel = 'webs
 
   await addMessage(conversation.id, 'user', message)
 
+  // ── Rapid-fire coalescing (messaging channels only) ──────────────────────
+  // On WhatsApp/Instagram people often fire several messages in a row. Each one
+  // arrives as its own webhook and, processed concurrently, they see each other's
+  // half-written history and reply to the WRONG message (the "blind/deaf" bug).
+  // Fix: after saving the message, wait a short debounce; if a NEWER message has
+  // since arrived, bail out — only the newest message replies, and it does so
+  // with the full context of everything typed. The website (request/response) is
+  // unaffected.
+  if (channel !== 'website') {
+    await new Promise((r) => setTimeout(r, COALESCE_MS))
+    const [newest] = await getRecentMessages(conversation.id, 1)
+    if (!newest || newest.role !== 'user' || (newest.content || '').trim() !== message) {
+      return { superseded: true, conversationId: conversation.id }
+    }
+  }
+
   const history = await getRecentMessages(conversation.id, config.chat.historyLimit)
 
   // ── Resolve the visitor's GHL identity ───────────────────────────────────
@@ -179,6 +199,9 @@ async function resolveTools(first, { system, messages, tools, ctx }) {
 export async function handleChat(args) {
   const prep = await prepareTurn(args)
   if (prep.empty) return { conversationId: prep.conversationId, reply: EMPTY_REPLY }
+  // Superseded by a newer message in the same burst — stay silent; the newest
+  // message's turn sends one reply covering everything.
+  if (prep.superseded) return { conversationId: prep.conversationId, reply: null, superseded: true }
 
   const tools = ghlEnabled() ? TOOLS : undefined
   let reply
@@ -216,6 +239,10 @@ export async function* streamChat(args) {
   if (prep.empty) {
     yield { delta: EMPTY_REPLY }
     yield { done: true, conversationId: prep.conversationId }
+    return
+  }
+  if (prep.superseded) {
+    yield { done: true, conversationId: prep.conversationId, superseded: true }
     return
   }
 
