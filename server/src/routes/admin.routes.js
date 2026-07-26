@@ -2,7 +2,6 @@ import { Router } from 'express'
 import { requireAuth } from '../middleware/auth.js'
 import { listContacts, updateContact } from '../services/contacts.service.js'
 import { listConversations, getRecentMessages } from '../services/conversations.service.js'
-import { addKnowledge } from '../services/knowledge.service.js'
 
 const router = Router()
 
@@ -43,15 +42,5 @@ router.get('/conversations/:id/messages', async (req, res, next) => {
   }
 })
 
-// --- Training / knowledge base --------------------------------------------
-router.post('/knowledge', async (req, res, next) => {
-  try {
-    const { source, title, content, metadata } = req.body || {}
-    if (!content) return res.status(400).json({ error: 'content is required' })
-    res.json({ knowledge: await addKnowledge({ source, title, content, metadata }) })
-  } catch (err) {
-    next(err)
-  }
-})
 
 export default router

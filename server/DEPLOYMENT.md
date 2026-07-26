@@ -18,9 +18,8 @@ Copy these keys/values (from your local `server/.env`):
 
 | Key | Value |
 |---|---|
-| `OPENAI_API_KEY` | `sk-proj-…` (your key) |
-| `OPENAI_MODEL` | `gpt-4o-mini` |
-| `OPENAI_EMBEDDING_MODEL` | `text-embedding-3-small` |
+| `ANTHROPIC_API_KEY` | `sk-ant-…` (your Claude key) |
+| `ANTHROPIC_MODEL` | `claude-opus-4-8` |
 | `SUPABASE_URL` | `https://cqzjfjdpqmvilwwkokda.supabase.co` |
 | `SUPABASE_SECRET_KEY` | `sb_secret_…` (server-only) |
 | `SUPABASE_PUBLISHABLE_KEY` | `sb_publishable_…` |

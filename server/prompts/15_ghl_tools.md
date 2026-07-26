@@ -16,12 +16,12 @@ NEEDS (to wire): GHL API key, Location ID, pipeline IDs + stage IDs, form ID(s),
 calendar ID(s), custom-field IDs, deposit/payment verification method.
 
 ## Supabase
-- App database of record for conversations, messages, leads, memory summaries,
-  and the training knowledge base (RAG). Server uses the **service_role** key.
+- App database of record for conversations, messages, leads, and memory
+  summaries. Server uses the **service_role** key.
 
-## OpenAI
-- LLM for Martini's responses + embeddings for RAG over the knowledge base and
-  Instagram exports.
+## Claude (Anthropic)
+- The LLM for all of Martini's responses. The bot answers from its prompt
+  modules (no external embeddings/RAG).
 
 ## Channels
 - Instagram DMs, WhatsApp, website chat — normalized into one conversation model.

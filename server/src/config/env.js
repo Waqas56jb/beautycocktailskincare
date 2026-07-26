@@ -28,14 +28,6 @@ export const config = {
     maxTokens: Number(process.env.ANTHROPIC_MAX_TOKENS) || 700,
   },
 
-  // OpenAI is now ONLY used for knowledge-base embeddings (Anthropic has no
-  // embeddings API). Optional — if absent/out of credit, RAG turns itself off
-  // and the bot answers from its prompt modules instead.
-  openai: {
-    apiKey: process.env.OPENAI_API_KEY || '',
-    embeddingModel: process.env.OPENAI_EMBEDDING_MODEL || 'text-embedding-3-small',
-  },
-
   supabase: {
     url: required('SUPABASE_URL'),
     secretKey: required('SUPABASE_SECRET_KEY'),
