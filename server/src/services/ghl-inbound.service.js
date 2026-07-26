@@ -63,7 +63,7 @@ export async function handleGhlInbound(body = {}, forcedChannel = null) {
   if (contact && !contact.name && name) patch.name = name
   if (contact && Object.keys(patch).length) await updateContact(contact.id, patch).catch(() => {})
 
-  const { reply } = await handleChat({ conversationId: conv.id, text: message, channel })
+  const { reply, error } = await handleChat({ conversationId: conv.id, text: message, channel })
 
   // Two delivery paths (either works):
   //  1) We push the reply straight to GHL (needs the Conversations Messages scope
@@ -76,5 +76,5 @@ export async function handleGhlInbound(body = {}, forcedChannel = null) {
     if (sent?.error) console.error('GHL reply send failed:', sent.status, sent.error)
   }
 
-  return { replied: Boolean(reply), reply: reply || null, channel, conversationId: conv.id, sent }
+  return { replied: Boolean(reply), reply: reply || null, error: error || undefined, channel, conversationId: conv.id, sent }
 }

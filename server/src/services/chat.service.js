@@ -227,6 +227,7 @@ export async function handleChat(args) {
     console.log('───── SYSTEM PROMPT tail ─────\n' + prep.system.slice(-600) + '\n──────────────────────────────\n')
   }
   let reply
+  let errorDetail = null
   try {
     const first = await openai.chat.completions.create({
       model: config.openai.model,
@@ -243,14 +244,15 @@ export async function handleChat(args) {
     reply = textOf(final) || "I'm here — could you say that again?"
     await addMessage(prep.conversationId, 'bot', reply, { model: config.openai.model })
   } catch (err) {
-    console.error('OpenAI error:', err.message)
+    console.error('OpenAI error:', err.status, err.message)
+    errorDetail = `${err.status || ''} ${err.message || err}`.trim()
     reply = ERROR_REPLY
     await addMessage(prep.conversationId, 'bot', reply, { error: err.message })
   }
 
   await touchConversation(prep.conversationId)
   await extractAndSave(prep.conversationId, prep.contact)
-  return { conversationId: prep.conversationId, reply }
+  return { conversationId: prep.conversationId, reply, error: errorDetail }
 }
 
 // Streaming: async generator yielding { delta } tokens, then { done, conversationId }.
