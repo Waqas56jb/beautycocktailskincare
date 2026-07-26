@@ -223,6 +223,26 @@ function promosLine() {
   ].join('\n')
 }
 
+// COMMON FAQs — the SAME for every client type (lead, active_booking, package,
+// returning). Included in every branch so the bot answers these consistently and
+// NEVER says "let me check with the team" for a fact it actually knows.
+function commonFaqLine() {
+  const s = config.studio
+  const L = config.links
+  const c = config.prices.consultationOnly
+  return [
+    'COMMON FAQs — these facts are the SAME for EVERYONE regardless of their tags. Always answer them directly, warmly and consistently. **NEVER say "let me confirm with the team" for any of these — you KNOW them:**',
+    '- **Hours:** 11 AM – 7 PM, by appointment only.',
+    `- **Location:** ${s.locationShort} — [Directions](${L.map}), by appointment only. On the day of an appointment: **inside the Urban Cave, enter from the front (Scott Road side)**, take a seat at reception and say you're here for JT.`,
+    '- **Parking:** Yes — **free parking in the plaza** 😊',
+    '- **Women-based** skincare studio in Surrey.',
+    `- **Phone:** ${s.phone} — JT isn't always free for a call, but you can help right here.`,
+    `- **Prices:** Facial from **$120** · Consultation **$${c}/20 min** (FREE with a facial) · Dermaplaning $79 · Full body wax $160 · Brazilian $55 · Half/Full legs $55 · Half/Full arms $35.`,
+    '- **Bring a friend / kids:** a friend is welcome if she is a woman (women-based) and can book her own session; kids are okay if they won\'t be a problem during the session.',
+    '- **Payments:** a deposit is paid to book; the rest is paid in person (cash, card, or e-transfer).',
+  ].join('\n')
+}
+
 // Classify the person from their GHL tags (owner-confirmed tag names, July 21):
 //   package client  → tag "active package" / "active_package"
 //   active booking  → tag "active_booking" (+ "facial_appt" / "wax_appt")
@@ -312,6 +332,7 @@ export function buildSystemPrompt({ contact, knowledge, channel, ghlTags, appoin
       `CURRENT DATE & TIME — studio local (America/Vancouver): ${currentDateTime()}`,
       toneLine(channel),
       activeBookingLine(contact, appointment, serviceType),
+      commonFaqLine(),
       `CHANNEL: ${channel || 'website'}`,
       formatKnownContact(contact),
       formatKnowledge(knowledge),
@@ -331,6 +352,7 @@ export function buildSystemPrompt({ contact, knowledge, channel, ghlTags, appoin
     servicePricingLine(),
     studioInfoLine(),
     promosLine(),
+    commonFaqLine(),
     ghlTagsLine(ghlTags),
     `CHANNEL: ${channel || 'website'}`,
     formatKnownContact(contact),
