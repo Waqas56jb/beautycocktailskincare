@@ -224,6 +224,17 @@ function promosLine() {
   ].join('\n')
 }
 
+// GROUNDING — strict "answer only from what you're given" rule. Included in every
+// branch so the bot never invents facts (prices, hours, policies, appointments).
+function groundingLine() {
+  return [
+    'GROUNDING (READ FIRST) — **Answer ONLY from the facts in THIS prompt**: the modules above, the COMMON FAQs, pricing, offers, studio info, and the live GHL data (tags + appointment) provided at runtime. **NEVER invent, guess, or "fill in" prices, services, hours, availability, policies, appointment dates/times, or booking status.**',
+    '- If a fact is **not** covered here, do NOT make one up — say *"Let me confirm that for you 💛"* or hand off to JT. Saying "let me confirm" is ALWAYS better than stating something you were not given.',
+    '- **Live data may be missing** (a GHL fetch can fail or return nothing). In that case do NOT fabricate an appointment or a booking status — ask for their WhatsApp number and look it up, or say the team will confirm shortly. Never claim a booking exists (or does not) unless the lookup actually told you.',
+    '- Never quote a price, service, or policy that is not written above. When unsure, share the website or hand off — do not improvise.',
+  ].join('\n')
+}
+
 // COMMON FAQs — the SAME for every client type (lead, active_booking, package,
 // returning). Included in every branch so the bot answers these consistently and
 // NEVER says "let me check with the team" for a fact it actually knows.
@@ -330,6 +341,7 @@ export function buildSystemPrompt({ contact, knowledge, channel, ghlTags, appoin
     return [
       BASE_PROMPT,
       '\n\n=== RUNTIME CONTEXT ===',
+      groundingLine(),
       `CURRENT DATE & TIME — studio local (America/Vancouver): ${currentDateTime()}`,
       toneLine(channel),
       activeBookingLine(contact, appointment, serviceType),
@@ -343,6 +355,7 @@ export function buildSystemPrompt({ contact, knowledge, channel, ghlTags, appoin
   return [
     BASE_PROMPT,
     '\n\n=== RUNTIME CONTEXT ===',
+    groundingLine(),
     clientRoutingLine(clientType), // type-specific behaviour — first so it steers the turn
     `CURRENT DATE & TIME — studio local (America/Vancouver): ${currentDateTime()}`,
     toneLine(channel),

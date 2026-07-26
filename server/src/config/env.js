@@ -28,8 +28,8 @@ export const config = {
     // gpt-4o-mini is cheaper but less consistent on the nuanced rules.
     model: process.env.OPENAI_MODEL || 'gpt-4o',
     maxTokens: Number(process.env.OPENAI_MAX_TOKENS) || 700,
-    // Lower = more consistent (good for a business bot). "0" is respected.
-    temperature: process.env.OPENAI_TEMPERATURE ? Number(process.env.OPENAI_TEMPERATURE) : 0.4,
+    // Low = sticks to facts (good for a factual support bot). "0" is respected.
+    temperature: process.env.OPENAI_TEMPERATURE ? Number(process.env.OPENAI_TEMPERATURE) : 0.3,
   },
 
   supabase: {
