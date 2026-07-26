@@ -80,13 +80,13 @@ function parseArgs(str) {
 }
 
 // Which tools to offer for a channel. On WhatsApp/Instagram the contact is already
-// identified via their GHL record, so `link_contact` (website phone-linking) isn't
-// needed — and offering it makes the model "check form/deposit" on a plain "Book
-// me", derailing the booking. Keep only `lookup_appointment` there.
+// identified via their GHL record and an active-booking client's appointment is
+// pre-fetched into the prompt — so NO tools are needed there. Offering them only
+// tempts the model to "check form/deposit" or "look up a booking" on a plain
+// "Book me", derailing the booking. The website (anonymous visitors) keeps both.
 function toolsFor(channel) {
   if (!ghlEnabled()) return undefined
-  if (channel === 'website') return TOOLS
-  return TOOLS.filter((t) => t.function.name === 'lookup_appointment')
+  return channel === 'website' ? TOOLS : undefined
 }
 
 // Map stored history to chat messages (role + content). The system prompt is
