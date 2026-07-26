@@ -79,6 +79,16 @@ function parseArgs(str) {
   }
 }
 
+// Which tools to offer for a channel. On WhatsApp/Instagram the contact is already
+// identified via their GHL record, so `link_contact` (website phone-linking) isn't
+// needed — and offering it makes the model "check form/deposit" on a plain "Book
+// me", derailing the booking. Keep only `lookup_appointment` there.
+function toolsFor(channel) {
+  if (!ghlEnabled()) return undefined
+  if (channel === 'website') return TOOLS
+  return TOOLS.filter((t) => t.function.name === 'lookup_appointment')
+}
+
 // Map stored history to chat messages (role + content). The system prompt is
 // prepended separately as a `system` message before each API call.
 function toChatMessages(history) {
@@ -217,7 +227,7 @@ export async function handleChat(args) {
   // message's turn sends one reply covering everything.
   if (prep.superseded) return { conversationId: prep.conversationId, reply: null, superseded: true }
 
-  const tools = ghlEnabled() ? TOOLS : undefined
+  const tools = toolsFor(args.channel || 'website')
   const convo = [{ role: 'system', content: prep.system }, ...prep.messages]
   // Debug: log EXACTLY what goes to the model (set LOG_LLM_IO=1) — the message
   // array (history + latest user turn) + the system-prompt tail.
@@ -268,7 +278,7 @@ export async function* streamChat(args) {
     return
   }
 
-  const tools = ghlEnabled() ? TOOLS : undefined
+  const tools = toolsFor(args.channel || 'website')
   const ctx = { contact: prep.contact, conversationId: prep.conversationId, userTexts: prep.userTexts }
   let full = ''
   try {
